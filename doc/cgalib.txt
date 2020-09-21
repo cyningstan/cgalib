@@ -1,0 +1,1103 @@
+Introduction to CGALIB
+
+    CGALIB provides a fast graphics library for 320x200 graphics on a 
+    CGA card. Versions are designed for use with Watcom C and with
+    Personal C. These versions provide identical functions, and use
+    compatible formats for their binary files. The Watcom version offers
+    versions for all memory models.
+
+    Features provided by the libraries include:
+      - Full use of all CGA palettes in 320x200 mode.
+      - Emulation of those palettes on EGA and VGA.
+      - Emulation of 320x200 mode in 640x200 for monochrome devices.
+      - 80-column text with a selection of 4x8 fonts.
+      - Drawing directly to the screen or to an off-screen bitmap.
+    
+    CGALIB is intended primarily for turn-based games like adventures,
+    puzzles and strategy games. For speed, it does not offer pixel
+    perfect positioning but divides the screen into a grid of 80 by 100
+    cells. Bitmaps need to be a multiple of 4 pixels by 2 pixels to fit
+    into this grid. Coordinates are by the pixel, but those coordinates
+    need to be divisible by these values.
+
+    Action games are still possible, and can be achieved by sprite
+    rotation, but CGALIB might not be the most appropriate library for
+    such projects.
+
+Licence
+
+    This library, its associated programs and utilities, and its
+    documentation have been released into the public domain by its
+    author Damian Gareth Walker.
+
+Binary Package Contents
+
+    The CGALIB binary package for Watcom C contains the following
+    directory structure and files:
+
+    CGALIB\ is the main directory
+        DEMO.EXE is the demonstration program
+        MAKEFONT.EXE is the font maker utility
+        CGA-MS.LIB is the small model library
+        CGA-MM.LIB is the medium model library
+        CGA-MC.LIB is the compact model library
+        CGA-ML.LIB is the large model library
+        CGA-MH.LIB is the huge model library
+        FNT\ contains the supplied fonts
+            PAST.FNT is a medieval style font
+            PRESENT.FNT is a regular font
+            FUTURE.FNT is a sci-fi inspired font
+        BIT\ contains some supplied bitmaps
+
+Source Package Contents
+
+    The CGALIB source package for Watcom C contains the following
+    directory structure and files:
+
+    cgalib\ is the destination directory for binaries and data
+        bit\ is for bitmaps for the demonstration program
+        fnt\ is for fonts for the demonstration program
+    doc\ is the documentation directory
+        cgalib.txt is this document
+    inc\ is the include directory
+        cgalib.h is the main header file
+        bitmap.h is the header file for the bitmap module
+        font.h is the header file for the font module
+        screen.h is the header file for the screen module
+    obj\ is the directory for compiled object files
+    pic\ is the picture directory
+        demo.pic contains bitmaps for the demonstation program
+        future.pic is the source image for a sci-fi font
+        present.pic is the source image for a regular font
+        past.pic is the source image for a medieval/fantasy font
+    src\ is the source code directory
+        bitmap.c is the bitmap module source
+        demo.c is the demonstration program source
+        font.c is the font module source
+        makebit.c is the bitmap maker utility source
+        makefont.c is the font maker utility source
+        screen.c is the screen module source
+    makefile is the makefile to build the project
+
+Building a Project with CGALIB
+
+    To use CGALIB's functions in your project, you need to do the
+    following two things. Firstly, you need to include the "cgalib.h"
+    header in your own project's source:
+
+        #include "cgalib.h"
+    
+    This automatically includes the individual headers for the CGALIB
+    modules. You can copy those headers into your project's header
+    directory, but a better idea is to add CGALIB's include folder to
+    your include path on compilation, like this:
+
+        C:\PROJECT\> wcc project.c -I=\cgalib\inc
+    
+    This assumes that CGALIB is installed in a directory called \cgalib.
+    When you link your object file into an executable, you need to link
+    it with the CGA-??.LIB file, where ?? is the memory module that you
+    have chosen for your project: MS (small), MM (medium), MC (compact),
+    ML (large) or MH (huge). So if your project uses the default small
+    model, then you would link it like this:
+
+        C:\PROJECT\> wcl project.obj \cgalib\cga-ms.lib
+
+Rebuilding CGALIB
+
+    You might want to rebuild CGALIB from its sources, particularly if
+    you've made a customised version of it, or of its utilities or its
+    demonstration program. A makefile is provided to simplify this
+    process. If you unpacked the source files into the \cgasrc
+    directory, then you can build the project like this:
+
+        C:\CGASRC\> wmake
+    
+    This builds the LIB files for all the memory models, and stores them
+    in the \cgasrc\cgalib directory. It also builds the demonstration
+    program and the utilities against the small model library file, and
+    stores their executables in the \cgasrc\cgalib directory. It copies
+    the header files into the \cgasrc\cgalib\inc directory, and also
+    copies the supplied font and bitmap files into the relevant
+    directories under \cgasrc\cgalib.
+
+    The result of this is that the \cgasrc\cgalib directory contains all
+    of the files you would expect in the \cgalib directory of a binary
+    distribution of CGALIB.
+
+Modules
+
+    CGALIB has three modules:
+      - the Screen module,
+      - the Bitmap module,
+      - the Font module.
+
+    The Screen module handles hardware screen issues like setting the
+    video mode and the palette. It also handles drawing directly to the
+    screen, and extracting bitmaps directly from the screen.
+
+    The Bitmap module handles the manipulation of bitmaps: their
+    creation and destruction, copying them in full or in part, drawing
+    to them, and loading and storing them in files.
+
+    The Font module handles the use of fonts. It supports creating,
+    copying and destroying them, and defining their character patterns
+    by copying individual characters to and from bitmaps. It also has
+    some manipulation (changing a font's colour) and allows loading and
+    storing them in files.
+
+Summary of Functions
+
+    Screen *scr_create (int mode);
+    void scr_palette (Screen *screen, int palette, int colour);
+    void scr_put (Screen *dst, Bitmap *src, int x, int y, DrawMode draw);
+    void scr_get (Screen *src, Bitmap *dst, int x, int y);
+    void scr_box (Screen *screen, int x, int y, int width, int height);
+    void scr_print (Screen *screen, int x, int y, char *message);
+    void scr_ink (Screen *screen, int ink);
+    void scr_paper (Screen *screen, int paper);
+    void scr_font (Screen *screen, Font *font);
+    void scr_destroy (Screen *screen);
+
+    Bitmap *bit_create (int width, int height);
+    Bitmap *bit_copy (Bitmap *src);
+    Bitmap *bit_read (FILE *input);
+    void bit_write (Bitmap *bitmap, FILE *output);
+    void bit_put (Bitmap *dst, Bitmap *src, int x, int y, DrawMode d);
+    void bit_get (Bitmap *src, Bitmap *dst, int x, int y);
+    void bit_box (Bitmap *bitmap, int x, int y, int width, int height);
+    void bit_print (Bitmap *bitmap, int x, int y, char *message);
+    void bit_ink (Bitmap *bitmap, int ink);
+    void bit_paper (Bitmap *bitmap, int paper);
+    void bit_font (Bitmap *bitmap, Font *font);
+    void bit_destroy (Bitmap *bitmap);
+
+    Font *fnt_create (int first, int last);
+    Font *fnt_copy (Font *font);
+    Font *fnt_read (FILE *input);
+    void fnt_write (Font *font, FILE *output);
+    void fnt_put (Font *dst, Bitmap *src, int ch);
+    void fnt_get (Font *src, Bitmap *dst, int ch);
+    void fnt_colours (Font *font, int i, int p);
+    void fnt_destroy (Font *font);
+
+The Screen Module
+
+    The screen module works through a Screen structure, passed to and
+    from the module with a pointer. Nearly all the screen functions have
+    this pointer as their first argument. The exception is scr_create ()
+    which creates the structure and returns the pointer in the first
+    place.
+
+    X coordinates and widths in the screen functions MUST be divisible
+    by 4. This is for speed: with 2-bit CGA graphics the byte boundaries
+    are on every fourth pixel. Allowing arbitrary X coordinates would
+    necessitate bit rotation and slow the library down.
+
+    Y coordinates and heights in the screen functions MUST be divisible
+    by 2. Again this is for speed: the screen memory is interleaved so
+    that odd and even rows require different computations. It keeps
+    things fast if the library can assume all screen operations apply
+    to paired even and odd screen rows.
+
+scr_create ()
+
+    Declaration:
+    Screen *scr_create (int mode);
+
+    Example:
+    /* initialise a screen in mode 4 (320x200 colour)
+    Screen *screen;
+    screen = scr_create (4);
+    /* ... do things with the screen ... */
+    scr_destroy (screen);
+
+    This sets the video mode and initialises various internal screen
+    variables. The screen modes are as follows:
+
+    4   This is the standard 320x200 4-colour mode. Upon initialisation,
+        the palette will be set to light cyan, magenta and white with a
+        black background.
+    
+    5   This is the 320x200 "monochrome" mode. On a monochrome monitor
+        this will provide four grey scales. On a colour monitor it will
+        have a cyan, red and white palette, with both intensities
+        available. Upon initialisation, the light palette is chosen with
+        a black background.
+
+    6   This is the 640x200 high resolution mode. CGALIB will treat this
+        as a 320x200 screen, using 320x200 coordinates and rendering
+        graphics in dithered monochrome. It is useful for portable
+        devices with murky monochrome screens that may not show the more
+        interesting colour choices clearly. Palette changes are ignored
+        in this mode.
+
+scr_palette ()
+
+    Declaration:
+    void scr_palette (Screen *screen, int palette, int colour);
+
+    Example:
+    /* set up a screen with brown, cyan, red, white palette */
+    Screen *screen;
+    screen = scr_create (5);
+    scr_palette (screen, 5, 6);
+    /* ... do things with the screen ... */
+    scr_destroy (screen);
+
+    This changes the screen palette. The palette variable is one of the
+    six valid 3-colour CGA palettes, numbered as follows:
+
+        0   dark red, dark green and brown.
+        1   turquoise, purple and light grey.
+        2   dark red, turquoise and light grey.
+        3   light red, light green and yellow.
+        4   cyan, magenta and white.
+        5   cyan, light red and white.
+
+    The system will switch between video modes 4 and 5 as necessary,
+    without clearing the screen, to obtain the appropriate palette. The
+    colour variable controls the nominal background colour, which can
+    be any of the colours 0 to 15.
+
+    These settings allow a theoretical total of 96 different colour
+    schemes, although when you take out the ones with duplicate colours
+    in them, and a couple of palettes that contain the same colours in
+    a different order, that is reduced to 76.
+
+    The scr_palette function returns without taking any action if the
+    initial video mode was 6 (640x200 monochrome). Although mode 6
+    supports changing the foreground colour, CGALIB uses mode 6 only to
+    emulate 320x200 modes on monochrome devices. Since trying to emulate
+    the colour palette changes in mode 6 is futile and could result in
+    unreadable colour combinations, CGALIB ignores palette changes in
+    this mode.
+
+    EGA video cards and better (including VGA and all modern standards)
+    ignore the CGA palette registers and allow individual selection of
+    all four colours. However, to ensure consistency of results on all
+    displays, CGALIB addresses the EGA palette routines and sets an
+    equivalent palette to the one requested of CGA.
+
+scr_put ()
+
+    Declaration:
+    void scr_put (Screen *dst, Bitmap *src, int x, int y, DrawMode draw);
+
+    Example:
+    /* copy a bitmap (containing random trash) across the screen */
+    Screen *screen;
+    Bitmap *bitmap;
+    screen = scr_create (4);
+    bitmap = bit_create (16, 16);
+    for (x = 0; x < 320; x++)
+        for (y = 0; y < 192; y++)
+            scr_put (screen, bitmap, x, y, DRAW_PSET);
+    getch ();
+    bit_destroy (bitmap);
+    scr_destroy (screen);
+
+    Puts a bitmap on the screen. The dst variable is the destination
+    screen. Currently only a single screen page is supported. The src
+    variable is the bitmap. The x and y variables are the coordinates
+    at which to put the bitmap. The draw variable is one of the
+    following values:
+
+        DRAW_PSET: the full rectangle of the bitmap is copied to the
+        screen as is, including any background pixels. This is the
+        fastest draw mode.
+
+        DRAW_PRESET: a negative version of the full rectangle of the
+        bitmap is copied to the screen.
+
+        DRAW_AND: the bitmap is treated as an AND mask; pixels in colour
+        3 in the bitmap are left as they are on the screen, while pixels
+        in colour 0 are blanked out on the screen. This can be used to
+        create a shaped "hole" in a background before putting a sprite
+        on the screen with DRAW_OR.
+
+        DRAW_OR: the bitmap is treated as an OR mask and blended with
+        whatever is already on the screen. Pixels that are colour 0 on
+        the screen will adopt the colour of the pixel in the bitmap;
+        pixels with other colours will be affected in various ways. It
+        is generallly used in conjunction with DRAW_AND to create a
+        shaped "hole" in a background before putting a sprite on the
+        screen.
+
+        DRAW_XOR: the bitmap is treated as an XOR mask with what is
+        already on the screen. A simple technique for moving an animated
+        sprite across the background is to draw it using DRAW_XOR, and
+        erase it using DRAW_XOR again before redrawing it a little
+        further along its path. This can be ugly in game graphics but
+        works better when moving a cursor.
+    
+    On slower computers, complicated drawing operations over large areas
+    may be slow enough for the user to watch. If this is undesirable
+    then the bit_put () function may be more used instead; the same
+    operations can be applied to a bitmap which is transferred to the
+    visible screen with a scr_put () once they are all finished. The
+    overall process will not be much faster, but the resulting graphic
+    will appear instantly on the screen.
+
+scr_get ()
+
+    Declaration:
+    void scr_get (Screen *src, Bitmap *dst, int x, int y);
+
+    Example:
+    /* scroll an area of the screen to the left */
+    Screen *screen;
+    Bitmap *bitmap;
+    /* ... create the screen and put things on it ... */
+    bitmap = bit_create (128, 144);
+    scr_get (screen, bitmap, 104, 28);
+    scr_put (screen, bitmap, 88, 28);
+    scr_ink (screen, 0);
+    scr_box (screen, 232, 28, 16, 144);
+    /* ... do things with the bitmap ... */
+
+    This grabs an area of the screen and stores it in a bitmap. The
+    screen and bitmap variables specify the screen and bitmap to use
+    (only one screen page is currently supported but the screen 
+    parameter is required anyway). The X and Y coordinates determine
+    the top left of the area to extract; the bitmap's size determine
+    the width and height of the area.
+
+    The principal use of scr_get is to initially create the bitmaps used
+    in a project. But it can also be used to facilitate scrolling of
+    areas of the screen, as in the above example which scrolls a 144x144
+    pixel area (88,28) .. (247,171) sixteen pixels to the left.
+
+scr_box ()
+
+    Declaration:
+    void scr_box (Screen *screen, int x, int y, int width, int height);
+
+    Example:
+    /* fill the screen with the default ink colour */
+    Screen *screen;
+    screen = scr_create (4);
+    scr_box (screen, 0, 0, 319, 199);
+
+    This draws a filled box over part of the screen. The box will be
+    in the colour set by scr_ink (). The draw mode is set to DRAW_PSET
+    for speed; if more complicated drawing operations are needed then
+    a filled bitmap should be prepared and used.
+
+    The main intended use of this function is to blank out areas of the
+    screen prior to drawing into them, to create a clean canvas of the
+    desired colour.
+
+scr_print ()
+
+    Declaration:
+    void scr_print (Screen *screen, int x, int y, char *message);
+
+    Example:
+    /* Print a nice greeting */
+    Screen *screen;
+    Font *font;
+    screen = scr_create (4);
+    /* ... get font somehow ... */
+    scr_font (screen, font);
+    scr_print (screen, 0, 0, "Hello, world!");
+    /* ... */
+
+    This prints a single-line message on the screen at the desired x,y
+    position in the current font, using the current screen ink and paper
+    colours. The ink colour is applied to the lettering, while the paper
+    colour is applied to the rectangular area the text occupies. The
+    drawing operation is fixed at DRAW_PSET for speed,. If more
+    complicated operations are needed then the text should be put on a
+    bitmap with bit_print () and the bitmap used instead.
+
+scr_ink ()
+
+    Declaration:
+    void scr_ink (Screen *screen, int ink);
+
+    Example:
+    /* draw pretty coloured boxes */
+    Screen *screen;
+    screen = scr_create (4);
+    for (c = 1; c <= 3; ++c) {
+        scr_ink (screen, c);
+        scr_box (screen, 64, 40, 128, 80);
+    }
+
+    Sets the drawing colour for scr_box () and scr_print () operations
+    on the current screen. The ink colour should be 0 to 3. Note that
+    changing this colour might slow down the scr_print () function as it
+    needs to apply the colour to every character printed. For a faster
+    way of printing in colour, see fnt_colours ().
+
+scr_paper ()
+
+    Declaration:
+    void scr_paper (Screen *screen, int paper);
+
+    Example:
+    /* print text with a magenta background */
+    Screen *screen;
+    Font *font;
+    screen = scr_create (4);
+    /* ... get font somehow ... */
+    scr_font (screen, font);
+    scr_paper (screen, 2);
+    scr_print (screen, 0, 0, "Hello, world!");
+    /* ... */
+
+    This sets the paper colour for scr_print () operations. This is a
+    slow way to print in colour, as any paper colour other than the
+    default 0 has to be applied to each character as it is printed. For
+    a faster way to print in colour, see fnt_colours ().
+
+scr_font ()
+
+    Declaration:
+    void scr_font (Screen *screen, Font *font);
+
+    Example:
+    /* Print a nice greeting */
+    Screen *screen;
+    Font *font;
+    screen = scr_create (4);
+    /* ... get font somehow ... */
+    scr_font (screen, font);
+    scr_print (screen, 0, 0, "Hello, world!");
+    /* ... */
+
+    Selects a font for scr_print () operations. This MUST be done before
+    scr_print () is called, otherwise scr_print () will contemptuously
+    ignore you. If, for some reason, you want to return a screen to its
+    fontless state, pass NULL as the font.
+
+scr_destroy ()
+
+    Declaration:
+    void scr_destroy (Screen *screen);
+
+    Example:
+    /* create a screen and destroy it */
+    Screen *screen;
+    screen = scr_create (4);
+    /* ... do things with the screen ... */
+    scr_destroy (screen);
+
+    Destroys the screen after use. The memory it used is freed, and the
+    screen is returned to 80-column text mode.
+
+The Bitmap Module
+
+    The Bitmap module works through a Bitmap structure, which is passed
+    as the first argument to all the non-constructor functions in the
+    module, i.e., all apart from bit_create (), bit_copy () and
+    bit_read ().
+
+    As with the Screen module, all X coordinates and widths need to be a
+    multiple of four, so that graphics lie on a byte boundary and no
+    masking or rotation is necessary to copy the graphics from one place
+    to another. This keeps up the speed of the routines.
+
+    For compatibility with the Screen module, all Y coordinates and
+    heights need to be a multiple of two. While bitmaps do not have the
+    interlaced memory layout of screens, it wouldn't make sense to allow
+    bitmaps with odd-numbered heights that could not then be put on the
+    screen.
+
+bit_create ()
+
+    Declaration:
+    Bitmap *bit_create (int width, int height);
+
+    Example:
+    /* create a new bitmap 16x16 pixels */
+    Bitmap *bitmap;
+    bitmap = bit_create (16, 16);
+    /* ... do things with the bitmap ... */
+    bit_destroy (bitmap);
+
+    Creates a new bitmap and sets its size. At the same time, the
+    drawing colours are set to ink 3 and paper 0. Memory is reserved for
+    the bitmap but is not cleared; you will need to use a function like
+    scr_get (), bit_get () or bit_box () to initialise it.
+
+bit_copy ()
+
+    Declaration:
+    Bitmap *bit_copy (Bitmap *src);
+
+    Example:
+    /* Copy one bitmap to another */
+    Bitmap *first, *second;
+    /* ... get bitmap first from somewhere ... */
+    second = bit_copy (first);
+    /* ... do things with the copy ... */
+    bit_destroy (second);
+    bit_destroy (first);
+
+    Creates a new bitmap by copying another. As well as the size and
+    graphical content, a bitmap's current settings are also copied: ink
+    and paper colours and the current font.
+
+bit_read ()
+
+    Declaration:
+    Bitmap *bit_read (FILE *input);
+
+    Example:
+    /* read a bitmap from a file */
+    Bitmap *bitmap;
+    FILE *fp;
+    fp = fopen ("graphics.dat", "rb");
+    bitmap = bit_read (fp);
+    fclose (fp);
+
+    Read a bitmap from an already open file. The bitmap would have been
+    saved with bit_write (), and the information in the file includes
+    the bitmap's size as well as its graphical data. Settings such as
+    ink and paper colours, and current font, are not stored in the file,
+    so they will be initialised as per a new bitmap.
+
+    Responsibility for opening the file is left to the developer. This
+    has the advantage that the developer can include many bitmaps in a
+    single file, along with other information like fonts or general game
+    data.
+
+bit_write ()
+
+    Declaration:
+    void bit_write (Bitmap *bitmap, FILE *output);
+
+    Example:
+    /* extract a bitmap and write it to a file */
+    Screen *screen;
+    Bitmap *bitmap;
+    FILE *fp;
+    /* ... initialise the screen and put something on it ... */
+    bitmap = bit_create (16, 16);
+    scr_get (screen, bitmap, 0, 0);
+    fp = fopen ("graphics.dat", "wb");
+    bit_write (bitmap, fp);
+    fclose (fp);
+    bit_destroy (bitmap);
+
+    Writes a bitmap to an already open file. The width and height are
+    written, followed by the graphical data. The current ink and paper
+    colours are not saved, nor is the current font, even though these
+    form part of the bitmap structure. These will have to be
+    reinitialised, if needed, when the bitmap is reloaded.
+
+    As for bit_read (), responsiblity for opening the file is left to
+    the developer for maximum flexibility.
+
+bit_put ()
+
+    Declaration:
+    void bit_put (Bitmap *dst, Bitmap *src, int x, int y, DrawMode draw);
+
+    Example:
+    /* put a tree on the map */
+    Bitmap *map, *tree;
+    FILE *treefile;
+    map = bit_create (144, 144);
+    fp = fopen ("tree.dat", "rb");
+    tree = bit_read (fp);
+    fclose (fp);
+    bit_put (map, tree, 64, 64, DRAW_PSET);
+    /* ... do more things with map ... */
+    bit_destroy (tree);
+    bit_destroy (map);
+
+    Puts one bitmap onto another, in much the same way as scr_put puts a
+    bitmap on the screen. The destination bitmap dst is assumed to be
+    large enough to contain the source bitmap src, and the (x,y)
+    coordinates indicate where on the destination bitmap the source
+    bitmap should be placed. The draw parameter contains one of the
+    following values:
+
+        DRAW_PSET: the full rectangle of the source bitmap is copied to
+        the destination bitmap as is, including any background pixels.
+        This is the fastest draw mode.
+
+        DRAW_PRESET: a negative version of the full rectangle of the
+        source bitmap is copied to the destination.
+
+        DRAW_AND: the source bitmap is treated as an AND mask; pixels in
+        colour 3 in the source bitmap are left as they are on the
+        destination, while pixels in colour 0 are blanked out on the
+        destination bitmap. This can be used to create a shaped "hole"
+        in a background before putting a sprite on the bitmap with
+        DRAW_OR.
+
+        DRAW_OR: the source bitmap is treated as an OR mask and blended
+        with whatever is already on the destination. Pixels that are
+        colour 0 on the destination bitmap will adopt the colour of the
+        pixel in the source bitmap; pixels with other colours will be
+        affected in various ways. It is generally used in conjunction
+        with DRAW_AND to create a shaped "hole" in a background before
+        putting a sprite onto the destination bitmap.
+
+        DRAW_XOR: the source bitmap is treated as an XOR mask with what
+        is already on the destination bitmap. This is useful for such
+        things as superimposing a cursor on an existing graphic;
+        repeating the XOR operation will remove the cursor again when it
+        is time for the cursor to move.
+
+    The bit_put () function is probably the best way to give the
+    appearance of instant graphics on slow hardware. Complicated drawing
+    operations, such as merging of sprites and backgrounds, can be
+    performed with bit_put () on a temporary bitmap ahead of time thus
+    invisible to the user. The temporary bitmap can then be transferred
+    to the screen in an instant with a single scr_put () operation.
+
+bit_get ()
+
+    Declaration:
+    void bit_get (Bitmap *src, Bitmap *dst, int x, int y);
+
+    Example:
+    /* display a window onto a larger map */
+    Screen *screen;
+    Bitmap *whole_map, *visible_map;
+    /* ... initialise screen ... */
+    int x, y;
+    whole_map = bit_create (256, 256);
+    visible_map = bit_create (144, 144);
+    /* ... prepare whole_map, set x and y of window ... */
+    bit_get (whole_map, visible_map, 16 * x, 16 * y);
+    scr_put (screen, visible_map, 8, 8);
+
+    Extracts a portion of a source bitmap src and copies it to a
+    destination bitmap dst. The example shows a use of this: in a
+    strategy or adventure game, a map level is prepared as one huge
+    bitmap. At any given time, a visible portion of it can be extracted
+    with bit_get () and placed at the appropriate coordinates on the
+    screen using scr_put (). This achieves a cheap method of maintaining
+    a map level and scrolling around it.
+
+bit_box ()
+
+    Declaration:
+    void bit_box (Bitmap *bitmap, int x, int y, int width, int height);
+
+    Example:
+    /* initialise a new bitmap with a blank box */
+    Bitmap *bitmap;
+    bitmap = bit_create (16, 16);
+    bit_ink (bitmap, 0);
+    bit_box (bitmap, 0, 0, 16, 16);
+
+    Draws a solid box onto a bitmap in the bitmap's current ink colour.
+    One possible use is shown in the example. Another is hinted at in
+    the documentation for scr_box (): a filled bitmap can be prepared
+    using bit_box () which can then be applied to the screen or another
+    bitmap using the scr_put () or bit_put () functions, allowing draw
+    modes other than DRAW_PSET to be used.
+
+bit_print ()
+
+    Declaration:
+    void bit_print (Bitmap *bitmap, int x, int y, char *message);
+
+    Example:
+    /* print onto a bitmap before transferring to the screen */
+    Screen *screen;
+    Bitmap *text_window;
+    Font *some_font;
+    char some_text[10][20];
+    int row;
+    /* ... initialise screen and some_font, and prepare some_text ... */
+    text_window = bit_create (80, 80);
+    bit_font (text_window, some_font);
+    for (row = 0; row < 10; ++row)
+        bit_print (text_window, 0, 8 * row, some_text[row]);
+    scr_put (screen, text_window, 160, 8);
+
+    Prints text onto a bitmap. Printing text can be a slow process,
+    but it can be made to appear fast by printing it onto a bitmap ahead
+    of time, and then transferring that whole bitmap to the screen in
+    one operation.
+
+    Text is printed onto the bitmap at position (x,y) in the bitmap's
+    current ink colour, against a background of the bitmap's current
+    paper colour. The bitmap's current font is used.
+
+bit_ink ()
+
+    Declaration:
+    void bit_ink (Bitmap *bitmap, int ink);
+
+    Example:
+    /* initialise a new bitmap with a blank box */
+    Bitmap *bitmap;
+    bitmap = bit_create (16, 16);
+    bit_ink (bitmap, 0);
+    bit_box (bitmap, 0, 0, 16, 16);
+
+    Set the ink colour for bit_box () and bit_print () operations on the
+    specified bitmap. The ink colour must be between 0 and 3 inclusive.
+    Note that printing in an ink colour other than 3 can slow down the
+    printing process; see fnt_colours () for a way to speed this up.
+
+bit_paper ()
+
+    Declaration:
+    void bit_paper (Bitmap *bitmap, int paper);
+
+    Example:
+    /* print some reverse text onto a bitmap */
+    Bitmap *bitmap;
+    bitmap = bit_create (48, 8);
+    bit_ink (bitmap, 0);
+    bit_paper (bitmap, 3);
+    bit_print (bitmap, 0, 0, "Some message");
+
+    Sets the paper colour for bit_print () operations on the specified
+    bitmap. The paper colour must be between 0 and 3 inclusive. Printing
+    in a paper colour other than 0 can be slow, as the colour must be
+    applied to every character. Printing to a bitmap disguises this; to
+    speed the process up even further see the documentation for the
+    fnt_colours () function.
+
+bit_font ()
+
+    Declaration:
+    void bit_font (Bitmap *bitmap, Font *font);
+
+    Example:
+    /* print something to a bitmap in the specified font */
+    Bitmap *bitmap;
+    Font *font;
+    /* initialise the bitmap and the font */
+    bit_font (bitmap, font);
+    bit_print (bitmap, 0, 0, "Some message");
+
+    Specifies the font for printing onto a bitmap. The bit_font function
+    MUST be called before attempting to use bit_print () on that bitmap;
+    failure to do so will cause bit_print () to output nothing causing
+    the developer some confusion.
+
+bit_destroy ()
+
+    Declaration:
+    void bit_destroy (Bitmap *bitmap);
+
+    Example:
+    /* create and destroy a bitmap */
+    Bitmap *bitmap;
+    bitmap = bit_create (16, 16);
+    /* ... do things with the bitmap ... */
+    bit_destroy (bitmap);
+
+    Destroys a bitmap and frees up the memory it took, once it is no
+    longer needed.
+
+The Font Module
+
+    The Font module works through a Font structure, which is passed to
+    the non-constructor font operation functions. The three constructor
+    font operations - fnt_create (), fnt_copy () and fnt_read () -
+    instead return a pointer to a new Font structure after reserving the
+    memory for it.
+
+    All fonts are 4 pixels wide by 8 high. The 4 pixels are stored 2
+    bits per pixel, so each pixel row takes up a whole byte. This is
+    done in the interests of speed; since the screen is in a 2 bit per
+    pixel video mode, no conversion of the characters for display is
+    necessary.
+
+    When printing with an ink colour other than 3 or a paper other than
+    0, the scr_print () and bit_print () functions assume that the
+    character design is in those colours, and applies AND masks to the
+    character's bit pattern to achieve the colours that the developer
+    desires.
+    
+    Designing fonts in alternative colours will speed up printing when
+    text is desired only in those colours. The developer can then leave
+    bitmaps and screens in their default ink and paper colours when
+    printing.
+
+fnt_create ()
+
+    Declaration:
+    Font *fnt_create (int first, int last);
+
+    Example:
+    /* create a new font containing the printable ASCII characters */
+    Font *font;
+    font = fnt_create (32, 126);
+
+    Creates a new font and reserves memory for it. The bit patterns will
+    be uninitialised, and therefore will contain junk until defined with
+    the fnt_put () function. The first and last parameters are the first
+    and last character codes used for the font's characters.
+
+fnt_copy ()
+
+    Declaration:
+    Font *fnt_copy (Font *src);
+
+    Example:
+    /* copy a font */
+    Font *old_font, *new_font;
+    /* ... obtain old_font somehow ... */
+    new_font = fnt_copy (old_font);
+
+    Creates a new font by copying an old one. This can be used, for
+    example, to create a modified version of a font, such as a version
+    in a different colour, while keeping the original font in memory.
+
+fnt_read ()
+
+    Declaration:
+    Font *fnt_read (FILE *input);
+
+    Example:
+    /* load a font */
+    Font *font;
+    FILE *fp;
+    fp = fopen ("font.dat", "rb");
+    font = fnt_read (fp);
+    fclose (fp);
+
+    Reads a font from an already open file. The font will have been
+    saved there previously by the fnt_write () function. Responsibility
+    for opening and closing the file is left with the developer. This
+    allows the developer to store their project's fonts in the same file
+    as other graphical data like bitmaps.
+
+fnt_write ()
+
+    Declaration:
+    void fnt_write (Font *font, FILE *output);
+
+    Example:
+    /* save a font */
+    Font *font;
+    /* ... create or otherwise obtain font ... */
+    FILE *fp;
+    fp = fopen ("font.dat", "wb");
+    fnt_write (font, fp);
+    fclose (fp);
+
+    Writes a font to an already open file for later reading. This will
+    generally be done in a one-off program that generates a project's
+    graphical data files.
+
+fnt_put ()
+
+    Declaration:
+    void fnt_put (Font *dst, Bitmap *src, int ch);
+
+    Example:
+    /* define a font from a series of bitmaps */
+    Font *font;
+    Bitmap *bitmap;
+    int ch;
+    font = fnt_create (32, 126);
+    bitmap = bit_create (4, 8);
+    for (ch = 32; ch <= 126; ++ch) {
+        /* ... get bitmap from somewhere ... */
+        fnt_put (font, bitmap, ch);
+    }
+
+    This defines a character by referring to a 4x8 pixel bitmap. This
+    will generally be done in a one-off program that generates the
+    graphical data files for a project.
+
+fnt_get ()
+
+    Declaration:
+    void fnt_get (Font *src, Bitmap *dst, int ch);
+
+    Example:
+    /* apply underlining to a whole font */
+    Font *font;
+    Bitmap *bitmap;
+    int ch;
+    /* ... get the font somehow ... */
+    bitmap = bit_create (4, 8);
+    for (ch = 32; ch <= 126; ++ch) {
+        fnt_get (font, bitmap, ch);
+        bit_box (bit, 0, 7, 4, 1);
+        fnt_put (font, bitmap, ch);
+    }
+
+    Gets the character definition of a font and stores it in a bitmap.
+    The example shows a possible application. fnt_get will generally be
+    used where a font's graphical data needs to be manipulated somehow.
+
+fnt_colours ()
+
+    Declaration:
+    void fnt_colours (Font *font, int ink, int paper);
+
+    Example:
+    /* turn a white-on-black font magenta-on-white */
+    Font *font;
+    /* ... load or otherwise obtain the font ... */
+    fnt_colours (font, 2, 3);
+
+    Turns a font into a different colour. This is permanent in that the
+    bit pattern for the font is directly modified and its original bit
+    values are lost. If the original font is still required then the
+    fnt_colours () operation should be done on a copy created with
+    fnt_copy ().
+
+    This is generally done for speed. Printing in colour by specifying
+    alternative ink and paper colours for the screen or bitmap onto
+    which the printing is done is a slow process: the bit pattern for
+    each character is modified as it is printed.
+
+    Using fnt_colours () to permanently alter a font's colours means
+    that this character-by-character modification is done only once,
+    and characters printed in the default ink and paper colours will
+    instead appear in the colours specified to fnt_colours ().
+
+fnt_destroy ()
+
+    Declaration:
+    void fnt_destroy (Font *font);
+
+    Example:
+    /* create and destroy a font */
+    Font *font;
+    font = fnt_create (32, 126);
+    /* ... do things with the font ... */
+    fnt_destroy (font);
+
+    Destroys a font and frees up memory used by it when it is no longer
+    needed.
+
+The Demonstration Program
+
+    The demonstration program, just called DEMO.EXE, is an
+    implementation of the classic Droids game. Your aim in this game is
+    to survive for as long as possible, while being chased by a host of
+    droids in an arena. If a droid catches you, then you die and the
+    game is over. A score is kept based on the number of droids
+    destroyed.
+
+    The key tool for defeating the droids is their own stupidity. They
+    head straight for the player without looking where they are going.
+    If two droids collide, they are both destroyed, leaving a pile of
+    debris behind. If other droids crash into the debris, they are also
+    destroyed.
+
+    Sometimes the player is cornered and there is no escape. Well, there
+    is: the teleport feature. You can teleport at any time to a random
+    part of the arena. But this comes with a risk and a cost. The risk
+    is that you teleport right into the path of a droid which will then
+    kill you. The cost is a score penalty, equal to half the number of
+    droids that the level started with, every time you teleport. So use
+    the teleport feature as sparingly as possible!
+
+    The game uses eight way movement. The directional controls are the
+    keypad with or without Num Lock. Space teleports. Any other key lets
+    the droids move while the player stands still - useful if the player
+    is shielded by debris and wants the droids to collide with it and
+    cause their own destruction.
+
+    If you are playing on a portable monochrome screen, or you just
+    dislike the game's colours, you can launch it in monochrome mode
+    using the -m parameter at the command line. This will use dithering
+    in 640x200 monochrome mode to give a black and white display.
+
+The Utilities
+
+    Two rudimentary utilities are bundled with CGALIB: a font maker and
+    a bitmap maker. Both extract graphics from a 320x200 BSAVE format
+    screen and save them into a file with a header.
+
+    The font maker is called MAKEFONT and takes two parameters: a source
+    BSAVE file and a destination FNT file:
+
+        C:\CGALIB\> makefont source.pic myfont.fnt
+
+    The BSAVE file should be a full-screen 320x200 2-bit image in which
+    the font appears in the top left 64x48 pixels, in six rows of
+    16 characters ranging from ASCII characters 32 (space) to 127. The
+    font will be extracted from the screen and saved into the font file
+    after an 8 byte header.
+
+    Your project can load the font by opening the file, reading and
+    and optionally checking the header, and then reading the font with
+    the fnt_read () function before closing the file. The header should
+    consist of the characters CGA100F followed by a NULL byte. If the
+    file format changes in future, then the header will also change.
+
+    The bitmap maker is called MAKEBIT and also takes two parameters: a
+    source BSAVE file and a destination BIT file.
+
+        C:\CGALIB\> makebit source.pic mybits.bit
+    
+    The BSAVE file should be a full-screen 320x200 2-bit image in which
+    the top 16 pixels is occupied by up to twenty 16x16 graphics for
+    your project. MAKEBIT makes no attempt to detect how many graphics
+    you have actually drawn, but saves all twenty bitmaps (including the
+    blank ones) into the destination file after an 8 byte header.
+
+    Your project can load the bitmaps by opening the file, reading and
+    optionally checking the header, and then reading the bitmaps (or as
+    many of them as you need up to a total of 20) with the bit_read ()
+    function before closing the file. The header should consist of the
+    characters CGA100B followed by a NULL byte. If the file format
+    changes in future, then the header will also change.
+
+    BSAVE files can be generated by various utilities, and by the paint
+    package PC PAINT. They are basically screen memory dumps, so any
+    program that claims to be able to show a screen in CGA 320x200 mode
+    and dump its contents should generate a BSAVE file suitable for
+    these utilities.
+
+Future Developments
+
+    CGALIB is distributed in a complete state. But there are some
+    possibilities for future development. Some of the ideas that might
+    be taken up in future developments are:
+
+      - Clipping on scr_put and bit_put operations. This will allow
+        source bitmaps to overlap the edge of the destination bitmap,
+        so that sprites can be shown leaving the visible play area more
+        cleanly.
+
+      - Fonts in sizes other than 4x8. This has proven to be quite slow
+        in previous attempts to develop CGALIB, so it might take the
+        form of alternative libraries rather than extra parameters to
+        the fnt_create () function.
+
+      - Pre-rotation aids. It is awkward to use CGALIB for action games
+        that require pixel perfect placement, since CGALIB works on a
+        grid of 4x2 pixel cells to suit screen memory layout. Currently
+        the developer has to draw a set of pre-rotated sprites at
+        various positions within this grid to achieve the effect. A set
+        of bitmap rotation functions should help with this.
+
+      - Conversion to assembly. Some of the functions are still slow on
+        older systems such as a 4.77 MHz 8088-based PC. Although the
+        off-screen graphics manipulation features help to mitigate this,
+        it would be nice to speed everything up by converting some or
+        all of the functions to assembly language.
+
+      - Better utilities to replace MAKEFONT and MAKEBIT, probably in
+        the form of full-featured font and sprite/tile editors.
+
+      - Sound and keyboard functions. Although these are nothing to do
+        with CGA graphics, they would help in developing the game
+        projects that CGALIB is intended for, and would be useful as
+        additional modules to it or a companion library.
+
+    The following ideas are not possibilities for future development, as
+    they go beyond the use case of CGALIB or nullify any speed advantage
+    over using a compiler's own graphics library:
+
+      - Full EGA/VGA graphics mode support. CGALIB obtains part of its
+        speed advantage by being able to make assumptions about the
+        screen memory layout.
+
+      - Accurate pixel placement. Automatic bit rotation to allow bitmap
+        and font data to be placed at any pixel location would slow down
+        the library significantly. The appearance of pixel-by-pixel
+        movement for action games should be done by the developer using
+        pre-rotation techniques instead.
