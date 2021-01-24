@@ -181,10 +181,10 @@ void fnt_colours (Font *font, int ink, int paper)
 
     /* loop through all the characters */
     for (ch = 0; ch < font->last - font->first; ++ch)
-        for (r = 0; r < 7; ++r) {
+        for (r = 0; r < 8; ++r) {
             f = font->pixels[8 * ch + r] & i;
-            b = 0xff ^ font->pixels[8 * ch + r] & p;
-            font->pixels[8 * ch + r] = i | p;
+            b = (0xff ^ font->pixels[8 * ch + r]) & p;
+            font->pixels[8 * ch + r] = f | b;
         }
 }
 
