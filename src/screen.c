@@ -162,6 +162,70 @@ void scr_palette (Screen *screen, int palette, int colour)
 }
 
 /**
+ * Put part of a bitmap onto the screen.
+ * @param dst is the screen to affect.
+ * @param src is the source bitmap.
+ * @param xd is the x coordinate at which the bitmap is to be placed.
+ * @param yd is the y coordinate at which the bitmap is to be placed.
+ * @param xs is the x coordinate of the source to copy from.
+ * @param ys is the y coordinate of the source to copy from.
+ * @param w is the width of the section to copy.
+ * @param h is the height of the section to copy.
+ * @param d is the draw mode.
+ */
+void scr_putpart (Screen *dst, Bitmap *src, int xd, int yd,
+		  int xs, int ys, int w, int h, DrawMode draw)
+{
+    /* local variables */
+    char far *d; /* address to copy data to */
+    char *s; /* address to copy data from */
+    int r; /* row counter */
+    int b; /* byte counter */
+
+    /* dst is not used but here for future proofing */
+    dst = dst; /* shut the compiler up, hopefully */
+
+    /* copy the pixels */
+    for (r = 0; r < h; ++r)
+
+        /* DRAW_PSET can be copied by a quicker method */
+        if (draw == DRAW_PSET) {
+            d = (r % 2)
+                ? xd / 4 + (yd + r - 1) * 40 + (char far *) 0xb8002000
+                : xd / 4 + (yd + r) * 40 + (char far *) 0xb8000000;
+            s = src->pixels + (xs / 4) + (src->width / 4) * (ys + r);
+            _fmemcpy (d, s, w / 4);
+        }
+        
+	/* the other draw operations need doing byte by byte */
+        else 
+            for (b = 0; b < w / 4; ++b) {
+                d = b +
+		    ((r % 2)
+		     ? xd / 4 + (yd + r - 1) * 40
+		     + (char far *) 0xb8002000
+		     : xd / 4 + (yd + r) * 40
+		     + (char far *) 0xb8000000);
+                s = b + src->pixels + (xs / 4)
+		    + (src->width / 4) * (ys + r);
+                switch (draw) {
+		case DRAW_PRESET:
+		    *d = ~*s;
+		    break;
+		case DRAW_AND:
+		    *d &= *s;
+		    break;
+		case DRAW_OR:
+		    *d |= *s;
+		    break;
+		case DRAW_XOR:
+		    *d ^= *s;
+		    break;
+                }
+            }
+}
+
+/**
  * Put a bitmap onto the screen.
  * @param dst is the screen to affect.
  * @param src is the source bitmap.

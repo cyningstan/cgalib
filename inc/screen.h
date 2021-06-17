@@ -59,6 +59,21 @@ Screen *scr_create (int mode);
 void scr_palette (Screen *screen, int palette, int colour);
 
 /**
+ * Put part of a bitmap onto the screen.
+ * @param dst is the screen to affect.
+ * @param src is the source bitmap.
+ * @param xd is the x coordinate at which the bitmap is to be placed.
+ * @param yd is the y coordinate at which the bitmap is to be placed.
+ * @param xs is the x coordinate of the source to copy from.
+ * @param ys is the y coordinate of the source to copy from.
+ * @param w is the width of the section to copy.
+ * @param h is the height of the section to copy.
+ * @param d is the draw mode.
+ */
+void scr_putpart (Screen *dst, Bitmap *src, int xd, int yd,
+		  int xs, int ys, int w, int h, DrawMode draw);
+
+/**
  * Put a bitmap onto the screen.
  * @param dst is the screen to affect.
  * @param src is the source bitmap.

@@ -6,6 +6,9 @@
 # Created 29-Jun-2020.
 #
 
+# Don't prompt for deleting after errors as crashes wmake in Windows
+.ERASE
+
 # Directories
 SRCDIR = src
 INCDIR = inc
