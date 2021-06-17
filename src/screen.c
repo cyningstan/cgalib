@@ -177,6 +177,9 @@ void scr_put (Screen *dst, Bitmap *src, int x, int y, DrawMode draw)
     int r; /* row counter */
     int b; /* byte counter */
 
+    /* dst is not used but here for future proofing */
+    dst = dst; /* shut the compiler up, hopefully */
+
     /* copy the pixels */
     for (r = 0; r < src->height; ++r)
 
@@ -226,6 +229,9 @@ void scr_get (Screen *src, Bitmap *dst, int x, int y)
     char far *s; /* address to copy data from */
     char *d; /* address to copy data to */
     int r; /* row counter */
+
+    /* src is here for future proofing */
+    src = src; /* shut the compiler up, hopefully */
 
     /* copy the pixels */
     for (r = 0; r < dst->height; ++r) {
