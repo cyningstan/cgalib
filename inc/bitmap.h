@@ -75,6 +75,21 @@ Bitmap *bit_read (FILE *input);
 void bit_write (Bitmap *bitmap, FILE *output);
 
 /**
+ * Put part of a bitmap onto another bitmap.
+ * @param dst is the bitmap to affect.
+ * @param src is the source bitmap.
+ * @param xd is the x coordinate at which the bitmap is to be placed.
+ * @param yd is the y coordinate at which the bitmap is to be placed.
+ * @param xs is the x coordinate of the source to copy from.
+ * @param ys is the y coordinate of the source to copy from.
+ * @param w is the width of the section to copy.
+ * @param h is the height of the section to copy.
+ * @param d is the draw mode.
+ */
+void bit_putpart (Bitmap *dst, Bitmap *src, int xd, int yd,
+		  int xs, int ys, int w, int h, DrawMode draw);
+
+/**
  * Put one bitmap onto another, with clipping.
  * @param dst is the destination bitmap.
  * @param src is the source bitmap.

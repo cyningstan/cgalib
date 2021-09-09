@@ -144,6 +144,61 @@ void bit_write (Bitmap *bitmap, FILE *output)
 }
 
 /**
+ * Put part of a bitmap onto another bitmap.
+ * @param dst is the bitmap to affect.
+ * @param src is the source bitmap.
+ * @param xd is the x coordinate at which the bitmap is to be placed.
+ * @param yd is the y coordinate at which the bitmap is to be placed.
+ * @param xs is the x coordinate of the source to copy from.
+ * @param ys is the y coordinate of the source to copy from.
+ * @param w is the width of the section to copy.
+ * @param h is the height of the section to copy.
+ * @param d is the draw mode.
+ */
+void bit_putpart (Bitmap *dst, Bitmap *src, int xd, int yd,
+		  int xs, int ys, int w, int h, DrawMode draw)
+{
+    /* local variables */
+    char *d; /* address to copy data to */
+    char *s; /* address to copy data from */
+    int r; /* row counter */
+    int b; /* byte counter */
+
+    /* copy the pixels */
+    for (r = 0; r < h; ++r)
+
+        /* DRAW_PSET can be copied by a quicker method */
+        if (draw == DRAW_PSET) {
+            d = dst->pixels + xd / 4 + (yd + r) * (dst->width / 4);
+            s = src->pixels + (xs / 4) + (src->width / 4) * (ys + r);
+            _fmemcpy (d, s, w / 4);
+        }
+        
+        /* the other draw operations need doing byte by byte */
+        else 
+            for (b = 0; b < w / 4; ++b) {
+                d = dst->pixels + b + xd / 4
+                    + (yd + r) * (dst->width / 4);
+                s = b + src->pixels + (xs / 4)
+		    + (src->width) / 4 * (ys + r);
+                switch (draw) {
+                    case DRAW_PRESET:
+                        *d = ~*s;
+                        break;
+                    case DRAW_AND:
+                        *d &= *s;
+                        break;
+                    case DRAW_OR:
+                        *d |= *s;
+                        break;
+                    case DRAW_XOR:
+                        *d ^= *s;
+                        break;
+                }
+            }
+}
+
+/**
  * Put one bitmap onto another, with clipping.
  * @param dst is the destination bitmap.
  * @param src is the source bitmap.
