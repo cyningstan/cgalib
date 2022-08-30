@@ -150,6 +150,8 @@ Summary of Functions
 
     Screen *scr_create (int mode);
     void scr_palette (Screen *screen, int palette, int colour);
+    void scr_putpart (Screen *dst, Bitmap *src, int xd, int yd,
+	int xs, int ys, int w, int h, DrawMode draw);
     void scr_put (Screen *dst, Bitmap *src, int x, int y, DrawMode draw);
     void scr_get (Screen *src, Bitmap *dst, int x, int y);
     void scr_box (Screen *screen, int x, int y, int width, int height);
@@ -163,6 +165,8 @@ Summary of Functions
     Bitmap *bit_copy (Bitmap *src);
     Bitmap *bit_read (FILE *input);
     void bit_write (Bitmap *bitmap, FILE *output);
+    void bit_putpart (Bitmap *dst, Bitmap *src, int xd, int yd,
+	int xs, int ys, int w, int h, DrawMode draw);
     void bit_put (Bitmap *dst, Bitmap *src, int x, int y, DrawMode d);
     void bit_get (Bitmap *src, Bitmap *dst, int x, int y);
     void bit_box (Bitmap *bitmap, int x, int y, int width, int height);
@@ -290,8 +294,8 @@ scr_put ()
     Bitmap *bitmap;
     screen = scr_create (4);
     bitmap = bit_create (16, 16);
-    for (x = 0; x < 320; x++)
-        for (y = 0; y < 192; y++)
+    for (x = 0; x < 320; x += 16)
+        for (y = 0; y < 192; y += 16)
             scr_put (screen, bitmap, x, y, DRAW_PSET);
     getch ();
     bit_destroy (bitmap);
@@ -338,6 +342,30 @@ scr_put ()
     visible screen with a scr_put () once they are all finished. The
     overall process will not be much faster, but the resulting graphic
     will appear instantly on the screen.
+
+scr_putpart ()
+
+    Declaration:
+    void scr_putpart (Screen *dst, Bitmap *src, int xd, int yd,
+	int xs, int ys, int w, int h, DrawMode draw);
+
+    Example:
+    /* copy part of an off-screen buffer onto the screen */
+    Screen *screen;
+    Bitmap *bitmap;
+    screen = scr_create (4);
+    bitmap = bit_create (320, 200);
+    /* ... put something on the bitmap ... */
+    scr_putpart (screen, bitmap, 80, 50, 80, 50, 160, 100, DRAW_PSET);
+    getch ();
+    bit_destroy (bitmap);
+    scr_destroy (screen);
+
+    Puts part of a bitmap on the screen. This function works in a
+    similar way to scr_put (), but it only extracts part of the bitmap
+    to put on the screen. The part of the bitmap to use is defined by
+    the xs, xy, w and h parameters (x source, y source, width and
+    height).
 
 scr_get ()
 
@@ -650,6 +678,37 @@ bit_put ()
     performed with bit_put () on a temporary bitmap ahead of time thus
     invisible to the user. The temporary bitmap can then be transferred
     to the screen in an instant with a single scr_put () operation.
+
+bit_putpart ()
+
+    Declaration:
+    void bit_putpart (Screen *dst, Bitmap *src, int xd, int yd,
+	int xs, int ys, int w, int h, DrawMode draw);
+
+    Example:
+    /* put a tile from an asset image on the map */
+    Bitmap *map, *tiles;
+    FILE *tilefile;
+    map = bit_create (144, 144);
+    fp = fopen ("tile.dat", "rb");
+    tiles = bit_read (fp);
+    fclose (fp);
+    bit_put (map, tiles, 64, 64, 16, 0, 16, 16, DRAW_PSET);
+    /* ... do more things with map ... */
+    bit_destroy (tree);
+    bit_destroy (map);
+
+    Puts part of a bitmap onto another bitmap. This function works in
+    a similar way to bit_put (), but it only extracts part of the
+    source bitmap to put on the destination bitmap. The part of the
+    source bitmap to use is defined by the xs, xy, w and h parameters
+    (x source, y source, width and height).
+
+    It is possible to specify the same bitmap as source and
+    destination, in order to copy parts of the bitmap on to
+    itself. However, care must be taken not to copy one part of the
+    bitmap on to another that overlaps it, as this may produce
+    unpredictable results.
 
 bit_get ()
 
