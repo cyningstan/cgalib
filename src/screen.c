@@ -97,6 +97,9 @@ static void palette_ega (Screen *screen)
     };
     int fgcount; /* count of foreground colours */
 
+    /* don't do any of this if we're in monochrome mode */
+    if (screen->mode == 6) return;
+
     /* background colour */
     regs.w.ax = 0x1000;
     regs.w.bx = 0x100 * background[screen->colour];
