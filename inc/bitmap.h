@@ -17,7 +17,6 @@
  */
 
 /** @struct bitmap holds the information for a bitmap */
-#ifdef __CGALIB__
 struct bitmap {
 
     /** @var width is the width of the bitmap in pixels */
@@ -39,7 +38,6 @@ struct bitmap {
     char *pixels;
 
 };
-#endif
 
 /*----------------------------------------------------------------------
  * Public Level Function Prototypes.
