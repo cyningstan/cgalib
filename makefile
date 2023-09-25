@@ -99,16 +99,16 @@ $(TGTDOC)/cgalib.txt : $(DOCDIR)/cgalib.txt
 
 # Object files for the executables
 $(OBJDIR)/demo.o : $(SRCDIR)/demo.c
-	wcl $(COPTS) -c -fo=$@ $< -i=$(INCDIR)
+	wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/makefont.o : $(SRCDIR)/makefont.c
-	wcl $(COPTS) -c -fo=$@ $< -i=$(INCDIR)
+	wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/makebit.o : $(SRCDIR)/makebit.c
-	wcl $(COPTS) -c -fo=$@ $< -i=$(INCDIR)
+	wcl $(COPTS) -c -fo=$@ $<
 
 # Object files for the modules (small model)
 $(OBJDIR)/screen.o : $(SRCDIR)/screen.c
-	wcl $(COPTS) -c -fo=$@ $< -i=$(INCDIR)
+	wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/bitmap.o : $(SRCDIR)/bitmap.c
-	wcl $(COPTS) -c -fo=$@ $< -i=$(INCDIR)
+	wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/font.o : $(SRCDIR)/font.c
-	wcl $(COPTS) -c -fo=$@ $< -i=$(INCDIR)
+	wcl $(COPTS) -c -fo=$@ $<

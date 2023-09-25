@@ -1,6 +1,2 @@
-*.lib
-*.exe
-*.LIB
-*.EXE
-*.bak
-*.BAK
+*
+!.gitignore

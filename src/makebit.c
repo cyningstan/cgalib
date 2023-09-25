@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 /* OS specific headers */
 #include <conio.h>
@@ -48,11 +49,20 @@ static int xcursor;
 /** @var ycursor The bitmap editor Y cursor position. */
 static int ycursor;
 
+/** @var clipboard The bitmap most recently copied. */
+static int clipboard;
+
 /** @var mono 1 if the user wants a monochrome screen. */
 static int mono;
 
-/** @var filename The filename */
+/** @var filename The filename. */
 static char filename[128];
+
+/** @var palette The current palette. */
+static int palette = 4;
+
+/** @var background The current background colour. */
+static int background = 0;
 
 /*----------------------------------------------------------------------
  * Service Routines.
@@ -69,6 +79,68 @@ void error_handler (int errorlevel, char *message)
         scr_destroy (scr);
     puts (message);
     exit (errorlevel);
+}
+
+/**
+ * Get a number.
+ * @param address Pointer to the number store.
+ * @param x       X location on the screen.
+ * @param y       Y location on the screen.
+ * @param min     Minimum value.
+ * @param max     Maximum value.
+ * @param step    Step of increase/decrease.
+ */
+void getnum (int *address, int x, int y, int min, int max, int step)
+{
+    int key; /* keypress */
+    char numstr[6], /* number expressed as a string */
+	*format; /* number format */
+
+    /* determine number format based on maximum value */
+    if (max < 10)
+	format = "%1d";
+    else if (max < 100)
+	format = "%02d";
+    else if (max < 1000)
+	format = "%03d";
+    else if (max < 10000)
+	format = "%04d";
+    else
+	format = "%05d";
+
+    /* main entry loop */
+    scr_ink (scr, 3);
+    do {
+	sprintf (numstr, format, *address);
+	scr_print (scr, x, y, numstr);
+	key = getch ();
+	if (key == 0) key = -getch ();
+	if (key == -72 && *address < max)
+	    *address += step;
+	else if (key == -80 && *address > min)
+	    *address -= step;
+    } while (key != 13);
+}
+
+/**
+ * Plot a single pixel.
+ * @param x X location
+ * @param y Y pixel location
+ * @param colour Colour of pixel
+ */
+static void plot (int x, int y, int colour)
+{
+    int shift; /* number of bits to shift */
+    char mask, /* AND mask for 4-pixel byte */
+	p; /* pixel value */
+    shift = (2 * (3 - (x % 4)));
+    mask = 0xff ^ (3 << shift);
+    p = bitmaps[bcursor]->pixels
+	[(x + y * bitmaps[bcursor]->width) / 4];
+    p &= mask;
+    p |= colour << shift;
+    bitmaps[bcursor]->pixels
+	[(x + y * bitmaps[bcursor]->width) / 4] = p;
 }
 
 /*----------------------------------------------------------------------
@@ -214,6 +286,101 @@ static void showbitmap (int b) {
 	     DRAW_OR);
 }
 
+/**
+ * Clear the current bitmap.
+ */
+static void clear (void)
+{
+    bit_ink (bitmaps[bcursor], 0);
+    bit_box
+	(bitmaps[bcursor], 0, 0, bitmaps[bcursor]->width,
+	 bitmaps[bcursor]->height);
+    bit_ink (bitmaps[bcursor], 3);
+}
+
+
+/**
+ * Perform a vertical flip
+ */
+static void verticalflip (void)
+{
+    Bitmap *bitmap; /* a pointer to the bitmap */
+    int r, /* row counter */
+	c, /* column counter */
+	t, /* index of top byte to swap */
+	b; /* index of bottom byte to swap */
+    char p; /* temporary swap storage */
+    bitmap = bitmaps[bcursor];
+    for (r = 0; r < bitmap->height / 2; ++r)
+	for (c = 0; c < bitmap->width / 4; ++c) {
+	    t = (r * bitmap->width / 4) + c;
+	    b = ((bitmap->height - 1 - r) * bitmap->width / 4) + c;
+	    p = bitmap->pixels[t];
+	    bitmap->pixels[t] = bitmap->pixels[b];
+	    bitmap->pixels[b] = p;
+	}
+}
+
+/**
+ * Perform a horizontal flip
+ */
+static void horizontalflip (void)
+{
+    Bitmap *bitmap; /* a pointer to the bitmap */
+    int r, /* row counter */
+	c, /* column counter */
+	l, /* index of left byte to swap */
+	i, /* index of right byte to swap */
+	b; /* bit counter */
+    char l1, /* original left byte */
+	l2, /* revised left byte */
+	r1, /* original right byte */
+	r2; /* revised right byte */
+    bitmap = bitmaps[bcursor];
+    for (r = 0; r < bitmap->height; ++r)
+	for (c = 0; c < (bitmap->width + 4) / 8; ++c) {
+	    l = (r * bitmap->width / 4) + c;
+	    i = (r * bitmap->width / 4) + (bitmap->width / 4 - 1) - c;
+	    l1 = bitmap->pixels[l];
+	    l2 = 0;
+	    for (b = 0; b < 7; b += 2) {
+		l2 = (l2 << 2) | (l1 & 3);
+		l1 >>= 2;
+	    }
+	    r1 = bitmap->pixels[i];
+	    r2 = 0;
+	    for (b = 0; b < 7; b += 2) {
+		r2 = (r2 << 2) | (r1 & 3);
+		r1 >>= 2;
+	    }
+	    bitmap->pixels[l] = r2;
+	    bitmap->pixels[i] = l2;
+	}
+}
+
+/**
+ * Perform a diagonal flip - halfway to a rotate.
+ */
+static void diagonalflip (void)
+{
+    int w, /* width of bitmap */
+	x, /* x counter */
+	y, /* y counter */
+	p, /* temporary pixel value */
+	p1, /* pixel value lower left */
+	p2; /* pixel value upper right */
+    w = bitmaps[bcursor]->width;
+    for (x = 0; x < w; ++x)
+	for (y = 0; y < x; ++y) {
+	    p = bitmaps[bcursor]->pixels[(x + y * w) / 4];
+	    p1 = (p >> (2 * (3 - (x % 4)))) & 3;
+	    p = bitmaps[bcursor]->pixels[(y + x * w) / 4];
+	    p2 = (p >> (2 * (3 - (y % 4)))) & 3;
+	    plot (x, y, p2);
+	    plot (y, x, p1);
+	}
+}
+
 /*----------------------------------------------------------------------
  * Level 2 Routines.
  */
@@ -242,6 +409,7 @@ void initialise_screen (int mono)
         error_handler (1, "Cannot load font");
     if (! (load_bitmaps (bits, "bit/makebit.bit")))
 	error_handler (1, "Cannot load program bitmaps");
+    scr_font (scr, fnt);
 
     /* initial screen display */
     if (bitmaps[bcursor])
@@ -256,23 +424,123 @@ void initialise_screen (int mono)
  */
 static void changepixel (int colour)
 {
-    int shift, /* number of bits to shift */
-	mask; /* bit mask */
-    char p; /* pixel group */
-
-    /* change the bitmap */
-    shift = (2 * (3 - (xcursor % 4)));
-    mask = 0xff ^ (3 << shift);
-    p = bitmaps[bcursor]->pixels
-	[(xcursor + ycursor * bitmaps[bcursor]->width) / 4];
-    p &= mask;
-    p |= colour << shift;
-    bitmaps[bcursor]->pixels
-	[(xcursor + ycursor * bitmaps[bcursor]->width) / 4] = p;
-
-    /* update the bitmap and the pixel */
+    bit_ink (bitmaps[bcursor], colour);
+    plot (xcursor, ycursor, colour);
     showbitmap (bcursor);
     expandpixel (xcursor, ycursor);
+}
+
+/**
+ * Paste the copied bitmap.
+ */
+static void paste (void)
+{
+    if (bitmaps[bcursor])
+	bit_destroy (bitmaps[bcursor]);
+    bitmaps[bcursor] = bit_copy (bitmaps[clipboard]);
+    showbitmap (bcursor);
+    expandbitmap ();
+}
+
+/**
+ * Insert a new bitmap.
+ */
+static void insert (void)
+{
+    int w, /* width of new bitmap */
+	h; /* height of new bitmap */
+
+    /* get the height and width of the bitmap */
+    w = 16;
+    h = 16;
+    scr_ink (scr, 3);
+    scr_print (scr, 0, 192, "Bitmap size: ..x..");
+    getnum (&w, 52, 192, 4, 24, 4);
+    getnum (&h, 64, 192, 2, 24, 2);
+
+    /* create and clear the bitmap */
+    bitmaps[bcursor] = bit_create (w, h);
+    clear ();
+
+    /* update the screen */
+    showbitmap (bcursor);
+    expandbitmap ();
+    scr_ink (scr, 0);
+    scr_box (scr, 0, 192, 320, 8);
+    scr_ink (scr, 3);
+}
+
+/**
+ * Vertical flip the current bitmap and show it.
+ */
+static void showverticalflip (void)
+{
+    verticalflip ();
+    showbitmap (bcursor);
+    expandbitmap ();
+}
+
+/**
+ * Horizontal flip the current bitmap and show it.
+ */
+static void showhorizontalflip (void)
+{
+    horizontalflip ();
+    showbitmap (bcursor);
+    expandbitmap ();
+}
+
+/**
+ * Save the bitmaps.
+ */
+static void savebitmaps (void)
+{
+    int key, /* keypress */
+	len, /* length of string */
+	c; /* bitmap counter */
+    FILE *fp; /* file pointer */
+
+    /* get the filename */
+    if (! *filename) {
+	scr_print (scr, 0, 192, "Filename: ");
+	do {
+	    key = getch ();
+	    if (key >= ' ' && key <= '~') {
+		len = strlen(filename);
+		filename[len] = key;
+		filename[len + 1] = '\0';
+		scr_print (scr, 40, 192, filename);
+	    } else if (key == 8 && *filename) {
+		len = strlen(filename);
+		filename[len - 1] = '\0';
+		len = strlen(filename);
+		scr_print (scr, 40 + 4 * len, 192, " ");
+	    }
+	} while (key != 13);
+	if (! strchr (filename, '.'))
+	    strcat (filename, ".bit");
+    }
+
+    /* save the file */
+    if (! (fp = fopen (filename, "wb")))
+	return;
+    fwrite ("CGA100B", 8, 1, fp);
+    for (c = 0; c < 24; ++c)
+	if (bitmaps[c])
+	    bit_write (bitmaps[c], fp);
+    fclose (fp);
+}
+
+/**
+ * Fill the current bitmap with its ink colour.
+ */
+static void fill (void)
+{
+    bit_box
+	(bitmaps[bcursor], 0, 0, bitmaps[bcursor]->width,
+	 bitmaps[bcursor]->height);
+    showbitmap (bcursor);
+    expandbitmap ();
 }
 
 /*----------------------------------------------------------------------
@@ -406,30 +674,98 @@ static int main_program (void)
     }
 
     /* page up (previous bitmap) */
-    else if (key == -73
-	&& bcursor > 0) {
+    else if (key == -73 && bcursor > 0) {
 	showbitmap (bcursor--);
 	showbitmap (bcursor);
 	expandbitmap ();
     }
 
     /* page down (next bitmap) */
-    else if (key == -81
-	&& bcursor < 23) {
+    else if (key == -81 && bcursor < 23) {
 	showbitmap (bcursor++);
 	showbitmap (bcursor);
 	expandbitmap ();
     }
 
     /* 0..3 change pixel colour */
-    else if (bitmaps[bcursor] && key >= '0' && key <= '3') {
+    else if (bitmaps[bcursor] && key >= '0' && key <= '3')
 	changepixel (key - '0');
+
+    /* SPACE - change pixel colour */
+    else if (bitmaps[bcursor] && key == ' ')
+	changepixel (bitmaps[bcursor]->ink);
+
+    /* V - vertical flip */
+    else if (bitmaps[bcursor] && toupper (key) == 'V')
+	showverticalflip ();
+
+    /* H - horizontal flip */
+    else if (bitmaps[bcursor] && toupper (key) == 'H')
+	showhorizontalflip ();
+
+    /* R - rotate */
+    else if (bitmaps[bcursor]
+	     && bitmaps[bcursor]->width == bitmaps[bcursor]->height
+	     && key == 'r') {
+	diagonalflip ();
+	showhorizontalflip ();
+    } else if (bitmaps[bcursor] 
+	     && bitmaps[bcursor]->width == bitmaps[bcursor]->height
+	     && key == 'R') {
+	diagonalflip ();
+	showverticalflip ();
+    }
+
+    /* C - copy */
+    else if (bitmaps[bcursor] && (key == 'c' || key == 'C'))
+	clipboard = bcursor;
+
+    /* P - paste */
+    else if (bitmaps[clipboard] && toupper (key) == 'P')
+	paste ();
+
+    /* X - clear */
+    else if (bitmaps[bcursor] && toupper (key) == 'X') {
+	clear ();
+	showbitmap (bcursor);
+	expandbitmap ();
+    }
+
+    /* F - fill */
+    else if (bitmaps[bcursor] && toupper (key) == 'F')
+	fill ();
+
+    /* INS - insert new bitmap */
+    else if (! bitmaps[bcursor] && key == -82)
+	insert ();
+
+    /* DEL - delete bitmap */
+    else if (bitmaps[bcursor] && key == -83) {
+	bit_destroy (bitmaps[bcursor]);
+	bitmaps[bcursor] = NULL;
+	showbitmap (bcursor);
+	expandbitmap ();
+    }
+
+    /* [ and ] - change palette */
+    else if (key == '[' || key == ']') {
+	palette += ((key == ']') - (key == '['));
+	if (palette < 0) palette = 0;
+	if (palette > 5) palette = 5;
+	scr_palette (scr, palette, background);
+    }
+
+    /* { and } - change background */
+    else if (key == '{' || key == '}') {
+	background += ((key == '}') - (key == '{'));
+	if (background < 0) background = 0;
+	if (background > 15) background = 15;
+	scr_palette (scr, palette, background);
     }
 
     /* ESC (quit) */
-    else if (key == 27) {
+    else if (key == 27)
 	return 0;
-    }
 
     /* return */
     return 1;
@@ -441,6 +777,7 @@ static int main_program (void)
 static void end_program (void)
 {
     int c; /* counter */
+    savebitmaps ();
     for (c = 0; c < 24; ++c)
 	bit_destroy (bitmaps[c]);
     for (c = 0; c < 9; ++c)

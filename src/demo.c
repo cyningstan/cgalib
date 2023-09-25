@@ -165,20 +165,29 @@ static int move_player (void)
 
     /* determine vertical direction */
     if (key == -71 || key == -72 || key == -73
-        || key == '7' || key == '8' || key == '9')
+        || key == '7' || key == '8' || key == '9'
+	|| key == 'q' || key == 'w' || key == 'e'
+	|| key == 'Q' || key == 'W' || key == 'E')
         yd = -1;
     else if (key == -79 || key == -80 || key == -81
-        || key == '1' || key == '2' || key == '3')
+        || key == '1' || key == '2' || key == '3'
+	|| key == 'z' || key == 'x' || key == 'c'
+	|| key == 'Z' || key == 'X' || key == 'C'
+	|| key == 's' || key == 'S')
         yd = 1;
     else
         yd = 0;
     
     /* determine horizontal direction */
     if (key == -71 || key == -75 || key == -79
-        || key == '7' || key == '4' || key == '1')
+        || key == '7' || key == '4' || key == '1'
+	|| key == 'q' || key == 'a' || key == 'z'
+	|| key == 'Q' || key == 'A' || key == 'Z')
         xd = -1;
     else if (key == -73 || key == -77 || key == -81
-        || key == '9' || key == '6' || key == '3')
+        || key == '9' || key == '6' || key == '3'
+	|| key == 'e' || key == 'd' || key == 'c'
+	|| key == 'E' || key == 'D' || key == 'C')
         xd = 1;
     else
         xd = 0;
