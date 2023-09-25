@@ -260,6 +260,8 @@ static void expandbitmap (void)
     if (bitmaps[bcursor]) {
 	w = bitmaps[bcursor]->width;
 	h = bitmaps[bcursor]->height;
+	if (xcursor >= w) xcursor = w - 1;
+	if (ycursor >= h) ycursor = h - 1;
 	for (x = 0; x < w; ++x)
 	    for (y = 0; y < h; ++y)
 		expandpixel (x, y);
