@@ -615,7 +615,6 @@ static void convert (void)
 
     /* clean up at the end */
     free (bytes);
-    bit_destroy (bitmap);
     scr_destroy (screen);
 }
 

@@ -487,6 +487,7 @@ int end_game (void)
     scr_ink (scr, 0);
     scr_box (scr, 124, 192, 72, 8);
     scr_ink (scr, 3);
+    bit_destroy (map_img);
 
     /* return true if key is 'N' to quit */
     return (key == 'N' || key == 'n');
