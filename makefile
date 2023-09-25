@@ -50,6 +50,8 @@ all : &
 	$(TGTINC)/bitmap.h &
 	$(TGTINC)/font.h &
 	$(TGTBIT)/demo.bit &
+	$(TGTBIT)/makebit.bit &
+	$(TGTBIT)/makefont.bit &
 	$(TGTFNT)/past.fnt &
 	$(TGTFNT)/present.fnt &
 	$(TGTFNT)/future.fnt &
@@ -85,6 +87,10 @@ $(TGTINC)/font.h : $(INCDIR)/font.h
 
 # Sample files in the target directory
 $(TGTBIT)/demo.bit : $(BITDIR)/demo.bit
+	$(CP) $< $@
+$(TGTBIT)/makebit.bit : $(BITDIR)/makebit.bit
+	$(CP) $< $@
+$(TGTBIT)/makefont.bit : $(BITDIR)/makefont.bit
 	$(CP) $< $@
 $(TGTFNT)/past.fnt : $(FNTDIR)/past.fnt
 	$(CP) $< $@
