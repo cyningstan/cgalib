@@ -17,7 +17,6 @@
  */
 
 /** @struct font holds the data for a single font. */
-#ifdef __CGALIB__
 struct font {
 
     /** @var first is the first character in a font */
@@ -29,7 +28,6 @@ struct font {
     /** @var pixels is the pixel data for each character */
     char *pixels;
 };
-#endif
 
 /*----------------------------------------------------------------------
  * Public Level Function Prototypes.

@@ -28,11 +28,15 @@ TGTFNT = $(TGTDIR)/fnt
 TGTBIT = $(TGTDIR)/bit
 TGTDOC = $(TGTDIR)/doc
 
+LOGDIR = loglib
+LOGLIB = $(LOGDIR)\lib
+LOGINC = $(LOGDIR)\inc
+
 # Tool commands and their options
 CC = wcc
 LIB = wlib
 LD = wcl
-COPTS = -q -0 -W4 -$(MODEL) -I=$(INCDIR)
+COPTS = -q -0 -W4 -$(MODEL) -I=$(INCDIR) -I=$(LOGINC)
 LOPTS = -q
 !ifdef __LINUX__
 CP = cp
@@ -45,6 +49,7 @@ all : &
 	$(TGTDIR)/demo.exe &
 	$(TGTDIR)/makefont.exe &
 	$(TGTDIR)/makebit.exe &
+	$(TGTDIR)/makefont.exe &
 	$(TGTINC)/cgalib.h &
 	$(TGTINC)/screen.h &
 	$(TGTINC)/bitmap.h &
@@ -59,18 +64,18 @@ all : &
 
 # Demonstration and Utilities
 $(TGTDIR)/demo.exe : $(OBJDIR)/demo.o $(TGTDIR)/cgalib.lib
-	$(LD) $(LOPTS) -fe=$@ $<
-$(TGTDIR)/makefont.exe : $(OBJDIR)/makefont.o $(TGTDIR)/cgalib.lib
-	$(LD) $(LOPTS) -fe=$@ $<
+	*$(LD) $(LOPTS) -fe=$@ $<
+$(TGTDIR)/makefont.exe : $(OBJDIR)/makefont.o $(TGTDIR)/cgalib.lib $(LOGLIB)\loglib.lib
+	*$(LD) $(LOPTS) -fe=$@ $<
 $(TGTDIR)/makebit.exe : $(OBJDIR)/makebit.o $(TGTDIR)/cgalib.lib
-	$(LD) $(LOPTS) -fe=$@ $<
+	*$(LD) $(LOPTS) -fe=$@ $<
 
 # Libraries
 $(TGTDIR)/cgalib.lib : &
 	$(OBJDIR)/screen.o &
 	$(OBJDIR)/bitmap.o &
 	$(OBJDIR)/font.o
-	$(LIB) $(LIBOPTS) $@ &
+	*$(LIB) $(LIBOPTS) $@ &
 		+-$(OBJDIR)/screen.o &
 		+-$(OBJDIR)/bitmap.o &
 		+-$(OBJDIR)/font.o
@@ -105,16 +110,16 @@ $(TGTDOC)/cgalib.txt : $(DOCDIR)/cgalib.txt
 
 # Object files for the executables
 $(OBJDIR)/demo.o : $(SRCDIR)/demo.c
-	wcl $(COPTS) -c -fo=$@ $<
+	*wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/makefont.o : $(SRCDIR)/makefont.c
-	wcl $(COPTS) -c -fo=$@ $<
+	*wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/makebit.o : $(SRCDIR)/makebit.c
-	wcl $(COPTS) -c -fo=$@ $<
+	*wcl $(COPTS) -c -fo=$@ $<
 
 # Object files for the modules (small model)
 $(OBJDIR)/screen.o : $(SRCDIR)/screen.c
-	wcl $(COPTS) -c -fo=$@ $<
+	*wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/bitmap.o : $(SRCDIR)/bitmap.c
-	wcl $(COPTS) -c -fo=$@ $<
+	*wcl $(COPTS) -c -fo=$@ $<
 $(OBJDIR)/font.o : $(SRCDIR)/font.c
-	wcl $(COPTS) -c -fo=$@ $<
+	*wcl $(COPTS) -c -fo=$@ $<
