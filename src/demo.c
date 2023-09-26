@@ -331,7 +331,7 @@ void initialise_screen (int mono)
 {
     if (! (scr = scr_create (mono ? 6 : 4)))
         error_handler (1, "Cannot initialise graphics mode!");
-    scr_palette (scr, 5, 7);
+    scr_palette (scr, 4, 4);
     if (! (fnt = load_font ("fnt/future.fnt")))
         error_handler (1, "Cannot load font");
     if (! load_bitmaps ("bit/demo.bit"))

@@ -41,7 +41,7 @@ static Font *editfont = NULL;
 static Bitmap *bits[9];
 
 /** @var bitmaps The edited font bitmaps. */
-static Bitmap *bitmaps[96];
+static Bitmap *bitmaps[256];
 
 /** @var bcursor The bitmap selector cursor position. */
 static int bcursor;
@@ -213,14 +213,14 @@ static Font *load_font (char *filename, int mkbitmaps)
 
     /* convert to bitmaps */
     if (mkbitmaps)
-	for (c = font->first; c <= font->last; ++c) {
-	    if (bitmaps[c - font->first]) {
-		bit_destroy (bitmaps[c - font->first]);
-		bitmaps[c - font->first] = NULL;
+	for (c = 0; c <= 255; ++c) {
+	    if (bitmaps[c]) {
+		bit_destroy (bitmaps[c]);
+		bitmaps[c] = NULL;
 	    }
-	    if (! bitmaps[c - font->first])
-		bitmaps[c - font->first] = bit_create (4, 8);
-	    fnt_get (font, bitmaps[c - font->first], c);
+	    if (c >= font->first && c <= font->last)
+		bitmaps[c] = bit_create (4, 8);
+	    fnt_get (font, bitmaps[c], c);
 	}
 
     /* return the loaded font */
@@ -291,18 +291,18 @@ static void expandbitmap (void)
  */
 static void showbitmap (int b) {
     scr_ink (scr, 0);
-    scr_box (scr, 96 + 12 * (b & 15), 24 * (b / 16), 12, 24);
+    scr_box (scr, 128 + 12 * (b & 15), 12 * (b / 16), 12, 12);
     scr_ink (scr, 3);
     if (bitmaps[b]) {
 	scr_put
 	    (scr, bitmaps[b],
-	     100 + 12 * (b & 15),
-	     4 + 24 * (b / 16),
+	     132 + 12 * (b & 15),
+	     2 + 12 * (b / 16),
 	     DRAW_PSET);
     }
     if (b == bcursor)
 	scr_put
-	    (scr, bits[8], 96 + 12 * (b & 15), 24 * (b / 16),
+	    (scr, bits[8], 128 + 12 * (b & 15), 12 * (b / 16),
 	     DRAW_OR);
 }
 
@@ -428,21 +428,26 @@ void newfont (void)
     l = 127;
     scr_ink (scr, 3);
     scr_print (scr, 0, 192, "Character codes: ...-...");
-    getnum (&f, 68, 192, 32, 127, 1);
-    getnum (&l, 84, 192, f, 127, 1);
+    getnum (&f, 68, 192, 32, 255, 1);
+    getnum (&l, 84, 192, f, 255, 1);
 
     /* create and clear the font */
     editfont = fnt_create (f, l);
-    for (c = f; c <= l; ++c)
-	if (! bitmaps[c - editfont->first]) {
+    for (c = 0; c <= 255; ++c) {
+	if (bitmaps[c]) {
+	    bit_destroy (bitmaps[c]);
+	    bitmaps[c] = NULL;
+	}
+	if (c >= editfont->first && c <= editfont->last) {
 	    bitmaps[c - editfont->first] = bit_create (4, 8);
 	    bit_ink (bitmaps[c - editfont->first], 0);
 	    bit_box (bitmaps[c - editfont->first], 0, 0, 4, 8);
 	    bit_ink (bitmaps[c - editfont->first], 3);
 	}
+    }
 
     /* update the screen */
-    bcursor = 0;
+    bcursor = editfont->first;
     showbitmap (bcursor);
     expandbitmap ();
     scr_ink (scr, 0);
@@ -542,8 +547,8 @@ static void save_font (void)
     }
 
     /* convert bitmaps to font */
-    for (c = 0; c <= editfont->last - editfont->first; ++c)
-	fnt_put (editfont, bitmaps[c], c + editfont->first);
+    for (c = editfont->first; c <= editfont->last; ++c)
+	fnt_put (editfont, bitmaps[c], c);
 
     /* save the file */
     if (! (fp = fopen (filename, "wb")))
@@ -588,7 +593,7 @@ static int initialise (int argc, char **argv)
     /* initial screen display */
     if (bitmaps[bcursor])
 	expandbitmap ();
-    for (b = 0; b <= editfont->last - editfont->first; ++b)
+    for (b = 0; b <= 255; ++b)
 	showbitmap (b);
     return 1;
 }
@@ -636,15 +641,14 @@ static int main_program (void)
     }
 
     /* page up (previous bitmap) */
-    else if (key == -73 && bcursor > 0) {
+    else if (key == -73 && bcursor > editfont->first) {
 	showbitmap (bcursor--);
 	showbitmap (bcursor);
 	expandbitmap ();
     }
 
     /* page down (next bitmap) */
-    else if (key == -81
-	     && bcursor < editfont->last - editfont->first) {
+    else if (key == -81 && bcursor < editfont->last) {
 	showbitmap (bcursor++);
 	showbitmap (bcursor);
 	expandbitmap ();
