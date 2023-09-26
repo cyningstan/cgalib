@@ -113,7 +113,7 @@ Rebuilding CGALIB
 
         C:\CGASRC\> wmake
     
-    This builds the LIB files for all the memory models, and stores them
+    This builds the LIB file for the small memory model, and stores it
     in the \cgasrc\cgalib directory. It also builds the demonstration
     program and the utilities against the small model library file, and
     stores their executables in the \cgasrc\cgalib directory. It copies
@@ -124,6 +124,14 @@ Rebuilding CGALIB
     The result of this is that the \cgasrc\cgalib directory contains all
     of the files you would expect in the \cgalib directory of a binary
     distribution of CGALIB.
+
+    If your project uses a memory model other than small, then rebuild
+    instead with a command like the following:
+
+        C:\CGASRC\> wmake MODEL=ml
+
+    Valid values are ms for small, mc for compact, mm for medium, ml
+    for large, and mh for huge.
 
 Modules
 
@@ -1065,31 +1073,70 @@ The Demonstration Program
 
 The Utilities
 
-    Two rudimentary utilities are bundled with CGALIB: a font maker and
-    a bitmap editor. Both extract graphics from a 320x200 BSAVE format
-    screen and save them into a file with a header.
+    Two utilities are bundled with CGALIB: a font editor and
+    a bitmap editor.
 
-    The font maker is called MAKEFONT and takes two parameters: a source
-    BSAVE file and a destination FNT file:
+    The font editor is called MAKEFONT. It takes an optional '-m'
+    parameter to load the utility in monochrome. It also takes an
+    optional filename. If the filename is given, an attempt is made to
+    load a font from the named file. If no filename is given, you will
+    be asked the character range for a new font. Typical ASCII fonts
+    have character values 32-127, and these values are supplied as
+    defaults.
 
-        C:\CGALIB\> makefont source.pic myfont.fnt
+    The font editor supports up to 256 characters in the character
+    set, at a resolution of 4x8 pixels per character. The bitmaps for
+    the characters are edited by moving a acursor around an expanded
+    pixel grid. The keys to operate the editor are as follows:
 
-    The BSAVE file should be a full-screen 320x200 2-bit image in which
-    the font appears in the top left 64x48 pixels, in six rows of
-    16 characters ranging from ASCII characters 32 (space) to 127. The
-    font will be extracted from the screen and saved into the font file
-    after an 8 byte header.
+    	Cursor keys: move the cursor in the editing grid.
+	Page up/down: go to the previous or next character.
+	0..3: paint the pixel under the cursor in the desired colour.
+	SPACE: paint the cursor pixel in the last used colour.
+	C: copy the current character to the clipboard.
+	P: paste the copied character over the current one.
+	X: clear the current character to the background colour.
+	F: fill the character with the last used colour.
+	INS: add a new bitmap at the current position.
+	DEL: delete the current bitmap.
+	[ and ]: change the foreground palette.
+	{ and }: change the background colour.
+	ESC: save and quit.
 
-    Your project can load the font by opening the file, reading and
-    and optionally checking the header, and then reading the font with
-    the fnt_read () function before closing the file. The header should
-    consist of the characters CGA100F followed by a NULL byte. If the
-    file format changes in future, then the header will also change.
+    For general purpose fonts, it is recommended that you stick with
+    colours 0 and 3, black and white in the default palette. CGALIB
+    includes facilities to display characters from a black and white
+    font in other colours. The option to use colours 1 and 2 remains
+    for multicolour fonts, and for fonts that will always be displayed
+    in a particular colour (e.g. special alert message fonts).
 
     The bitmap editor is called MAKEBIT. It takes an optional '-m'
     parameter to load the utility in monochrome. It also takes an
     optional filename. If the filename is given, an attempt is made to
-    load up to 32 bitmaps from the named file.
+    load up to 24 bitmaps from the named file.
+
+    The following function will load a font from the saved font file:
+
+	/* quick and dirty font load function. */
+	Font *load_font (char *filename)
+	{
+	    FILE *fp; /* file pointer */
+	    char header[8]; /* bitmap file header */
+	    Font *font;
+
+	    /* open the file, read past the header. */
+	    fp = fopen (filename, "rb");
+	    fread (header, 8, 1, fp);
+
+	    /* read the font information and return it. */#
+	    font = fnt_read (fp);
+	    fclose (fp);
+	    return font;
+	}
+
+	/* Example usage */
+	Font *font;
+	font = font_load ("filename.fnt");
 
     The bitmap editor supports up to 24 bitmaps in a file. Bitmap
     sizes can be from 4x2 pixels to 24x24. The bitmaps are edited by
@@ -1136,6 +1183,7 @@ The Utilities
 		bitmaps[c++] = bit;
 
 	    /* return */
+	    fclose (fp);
 	    return 1;
 	}
 
@@ -1143,6 +1191,18 @@ The Utilities
 	Bitmap *bitmaps[24];
 	load_bitmaps (&bitmaps, "filename.bit");
 
+    If you need more than 24 bitmaps, or bitmaps larger than the 24x24
+    bitmaps than the utility supports, then the recommended course is
+    to put a collage of all the bitmaps onto one or more 320x200
+    images, saved in BSAVE format. Then write a small utility that
+    loads this image straight into screen memory, extracts the
+    required bitmaps (using scr_get), and saves those bitmaps to an
+    asset data file for your project to load. You could also include
+    any fonts or other data in that asset file. And example of how
+    this works is in the game Team Droid, source code for which is
+    published at:
+
+	https://github.com/cyningstan/tdroid
 
 Future Developments
 
@@ -1172,10 +1232,6 @@ Future Developments
         off-screen graphics manipulation features help to mitigate this,
         it would be nice to speed everything up by converting some or
         all of the functions to assembly language.
-
-      - Better utility to replace MAKEFONT, probably in the form of
-        full-featured font editor similar in functionality to the
-        bitmap editor.
 
     The following ideas are not possibilities for future development, as
     they go beyond the use case of CGALIB or nullify any speed advantage
