@@ -436,10 +436,9 @@ void newfont (void)
     /* create and clear the font */
     editfont = fnt_create (f, l);
     for (c = 0; c <= 255; ++c) {
-	if (bitmaps[c]) {
+	if (bitmaps[c])
 	    bit_destroy (bitmaps[c]);
-	    bitmaps[c] = NULL;
-	}
+	bitmaps[c] = NULL;
 	if (c >= editfont->first && c <= editfont->last) {
 	    bitmaps[c] = bit_create (4, 8);
 	    bit_ink (bitmaps[c], 0);
@@ -618,10 +617,12 @@ static void reducefont (void)
 	    bcursor = f;
 	else if (bcursor > l)
 	    bcursor = l;
+	showbitmap (bcursor);
 	for (c = editfont->first; c <= editfont->last; ++c)
 	    if (c < f || c > l) {
 		if (bitmaps[c])
 		    bit_destroy (bitmaps[c]);
+		bitmaps[c] = NULL;
 		showbitmap (c);
 	    }
 	editfont->first = f;
