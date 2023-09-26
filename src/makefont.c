@@ -323,89 +323,6 @@ static void clear (void)
     bit_ink (bitmaps[bcursor], 3);
 }
 
-
-/**
- * Perform a vertical flip
- */
-static void verticalflip (void)
-{
-    Bitmap *bitmap; /* a pointer to the bitmap */
-    int r, /* row counter */
-	c, /* column counter */
-	t, /* index of top byte to swap */
-	b; /* index of bottom byte to swap */
-    char p; /* temporary swap storage */
-    bitmap = bitmaps[bcursor];
-    for (r = 0; r < bitmap->height / 2; ++r)
-	for (c = 0; c < bitmap->width / 4; ++c) {
-	    t = (r * bitmap->width / 4) + c;
-	    b = ((bitmap->height - 1 - r) * bitmap->width / 4) + c;
-	    p = bitmap->pixels[t];
-	    bitmap->pixels[t] = bitmap->pixels[b];
-	    bitmap->pixels[b] = p;
-	}
-}
-
-/**
- * Perform a horizontal flip
- */
-static void horizontalflip (void)
-{
-    Bitmap *bitmap; /* a pointer to the bitmap */
-    int r, /* row counter */
-	c, /* column counter */
-	l, /* index of left byte to swap */
-	i, /* index of right byte to swap */
-	b; /* bit counter */
-    char l1, /* original left byte */
-	l2, /* revised left byte */
-	r1, /* original right byte */
-	r2; /* revised right byte */
-    bitmap = bitmaps[bcursor];
-    for (r = 0; r < bitmap->height; ++r)
-	for (c = 0; c < (bitmap->width + 4) / 8; ++c) {
-	    l = (r * bitmap->width / 4) + c;
-	    i = (r * bitmap->width / 4) + (bitmap->width / 4 - 1) - c;
-	    l1 = bitmap->pixels[l];
-	    l2 = 0;
-	    for (b = 0; b < 7; b += 2) {
-		l2 = (l2 << 2) | (l1 & 3);
-		l1 >>= 2;
-	    }
-	    r1 = bitmap->pixels[i];
-	    r2 = 0;
-	    for (b = 0; b < 7; b += 2) {
-		r2 = (r2 << 2) | (r1 & 3);
-		r1 >>= 2;
-	    }
-	    bitmap->pixels[l] = r2;
-	    bitmap->pixels[i] = l2;
-	}
-}
-
-/**
- * Perform a diagonal flip - halfway to a rotate.
- */
-static void diagonalflip (void)
-{
-    int w, /* width of bitmap */
-	x, /* x counter */
-	y, /* y counter */
-	p, /* temporary pixel value */
-	p1, /* pixel value lower left */
-	p2; /* pixel value upper right */
-    w = bitmaps[bcursor]->width;
-    for (x = 0; x < w; ++x)
-	for (y = 0; y < x; ++y) {
-	    p = bitmaps[bcursor]->pixels[(x + y * w) / 4];
-	    p1 = (p >> (2 * (3 - (x % 4)))) & 3;
-	    p = bitmaps[bcursor]->pixels[(y + x * w) / 4];
-	    p2 = (p >> (2 * (3 - (y % 4)))) & 3;
-	    plot (x, y, p2);
-	    plot (y, x, p1);
-	}
-}
-
 /*----------------------------------------------------------------------
  * Level 2 Routines.
  */
@@ -492,26 +409,6 @@ static void paste (void)
 }
 
 /**
- * Vertical flip the current bitmap and show it.
- */
-static void showverticalflip (void)
-{
-    verticalflip ();
-    showbitmap (bcursor);
-    expandbitmap ();
-}
-
-/**
- * Horizontal flip the current bitmap and show it.
- */
-static void showhorizontalflip (void)
-{
-    horizontalflip ();
-    showbitmap (bcursor);
-    expandbitmap ();
-}
-
-/**
  * Save the bitmaps.
  */
 static void save_font (void)
@@ -553,18 +450,6 @@ static void save_font (void)
     fwrite ("CGA100F", 8, 1, fp);
     fnt_write (editfont, fp);
     fclose (fp);
-}
-
-/**
- * Fill the current bitmap with its ink colour.
- */
-static void fill (void)
-{
-    bit_box
-	(bitmaps[bcursor], 0, 0, bitmaps[bcursor]->width,
-	 bitmaps[bcursor]->height);
-    showbitmap (bcursor);
-    expandbitmap ();
 }
 
 /*----------------------------------------------------------------------
@@ -660,27 +545,6 @@ static int main_program (void)
     else if (bitmaps[bcursor] && key == ' ')
 	changepixel (bitmaps[bcursor]->ink);
 
-    /* V - vertical flip */
-    else if (bitmaps[bcursor] && toupper (key) == 'V')
-	showverticalflip ();
-
-    /* H - horizontal flip */
-    else if (bitmaps[bcursor] && toupper (key) == 'H')
-	showhorizontalflip ();
-
-    /* R - rotate */
-    else if (bitmaps[bcursor]
-	     && bitmaps[bcursor]->width == bitmaps[bcursor]->height
-	     && key == 'r') {
-	diagonalflip ();
-	showhorizontalflip ();
-    } else if (bitmaps[bcursor] 
-	     && bitmaps[bcursor]->width == bitmaps[bcursor]->height
-	     && key == 'R') {
-	diagonalflip ();
-	showverticalflip ();
-    }
-
     /* C - copy */
     else if (bitmaps[bcursor] && (key == 'c' || key == 'C'))
 	clipboard = bcursor;
@@ -695,10 +559,6 @@ static int main_program (void)
 	showbitmap (bcursor);
 	expandbitmap ();
     }
-
-    /* F - fill */
-    else if (bitmaps[bcursor] && toupper (key) == 'F')
-	fill ();
 
     /* [ and ] - change palette */
     else if (key == '[' || key == ']') {
