@@ -567,69 +567,6 @@ static void fill (void)
     expandbitmap ();
 }
 
-/**
- * Extend the font.
- */
-static void extendfont (void)
-{
-    int f, /* edited first character code */
-	l, /* edited last character code */
-	c; /* character count */
-
-    /* get the font character range */
-    f = editfont->first;
-    l = editfont->last;
-    getfontrange (&f, &l, 0, f, l, 255);
-
-    /* extend the font */
-    if (f < editfont->first || l > editfont->last) {
-	for (c = f; c <= l; ++c)
-	    if (c < editfont->first || c > editfont->last) {
-		if (bitmaps[c])
-		    bit_destroy (bitmaps[c]);
-		bitmaps[c] = bit_create (4, 8);
-		bit_ink (bitmaps[c], 0);
-		bit_box (bitmaps[c], 0, 0, 4, 8);
-		bit_ink (bitmaps[c], 3);
-	    }
-	editfont->first = f;
-	editfont->last = l;
-    }
-}
-
-/**
- * Reduce the font.
- */
-static void reducefont (void)
-{
-    int f, /* edited first character code */
-	l, /* edited last character code */
-	c; /* character count */
-
-    /* get the font character range */
-    f = editfont->first;
-    l = editfont->last;
-    getfontrange (&f, &l, f, l, f, l);
-
-    /* extend the font */
-    if (f > editfont->first || l < editfont->last) {
-	if (bcursor < f)
-	    bcursor = f;
-	else if (bcursor > l)
-	    bcursor = l;
-	showbitmap (bcursor);
-	for (c = editfont->first; c <= editfont->last; ++c)
-	    if (c < f || c > l) {
-		if (bitmaps[c])
-		    bit_destroy (bitmaps[c]);
-		bitmaps[c] = NULL;
-		showbitmap (c);
-	    }
-	editfont->first = f;
-	editfont->last = l;
-    }
-}
-
 /*----------------------------------------------------------------------
  * Level 1 Routines.
  */
@@ -778,14 +715,6 @@ static int main_program (void)
 	if (background > 15) background = 15;
 	scr_palette (scr, palette, background);
     }
-
-    /* INS - extend character codes */
-    else if (key == -82)
-	extendfont ();
-
-    /* DEL - reduce character codes */
-    else if (key == -83)
-	reducefont ();
 
     /* ESC (quit) */
     else if (key == 27)
