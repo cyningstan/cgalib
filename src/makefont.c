@@ -91,37 +91,21 @@ void error_handler (int errorlevel, char *message)
  * @param y       Y location on the screen.
  * @param min     Minimum value.
  * @param max     Maximum value.
- * @param step    Step of increase/decrease.
  */
-void getnum (int *address, int x, int y, int min, int max, int step)
+void getnum (int *address, int x, int y, int min, int max)
 {
     int key; /* keypress */
-    char numstr[6], /* number expressed as a string */
-	*format; /* number format */
-
-    /* determine number format based on maximum value */
-    if (max < 10)
-	format = "%1d";
-    else if (max < 100)
-	format = "%02d";
-    else if (max < 1000)
-	format = "%03d";
-    else if (max < 10000)
-	format = "%04d";
-    else
-	format = "%05d";
-
-    /* main entry loop */
+    char numstr[4]; /* number expressed as a string */
     scr_ink (scr, 3);
     do {
-	sprintf (numstr, format, *address);
+	sprintf (numstr, "%03d", *address);
 	scr_print (scr, x, y, numstr);
 	key = getch ();
 	if (key == 0) key = -getch ();
 	if (key == -72 && *address < max)
-	    *address += step;
+	    ++*address;
 	else if (key == -80 && *address > min)
-	    *address -= step;
+	    --*address;
     } while (key != 13);
 }
 
@@ -179,6 +163,27 @@ static void expandpixel (int x, int y)
 /*----------------------------------------------------------------------
  * Level 3 Routines
  */
+
+/**
+ * Get font range.
+ * @param first Pointer to first character code.
+ * @param last  Pointer to last character code.
+ * @param fmin  Mininmum first character code.
+ * @parma fmax  Maximum first character code.
+ * @param lmin  Mininmum last character code.
+ * @parma lmax  Maximum last character code.
+ */
+void getfontrange
+(int *first, int *last, int fmin, int fmax, int lmin, int lmax)
+{
+    scr_ink (scr, 3);
+    scr_print (scr, 0, 192, "Character codes: ...-...");
+    getnum (first, 68, 192, fmin, fmax);
+    getnum (last, 84, 192, *first > lmin ? *first : lmin, lmax);
+    scr_ink (scr, 0);
+    scr_box (scr, 0, 192, 320, 8);
+    scr_ink (scr, 3);
+}
 
 /**
  * Load and validate a font.
@@ -423,13 +428,10 @@ void newfont (void)
 	l, /* last character in font */
 	c; /* character counter */
 
-    /* get the height and width of the bitmap */
+    /* get the range of characters */
     f = 32;
     l = 127;
-    scr_ink (scr, 3);
-    scr_print (scr, 0, 192, "Character codes: ...-...");
-    getnum (&f, 68, 192, 32, 255, 1);
-    getnum (&l, 84, 192, f, 255, 1);
+    getfontrange (&f, &l, 0, 255, 0, 255);
 
     /* create and clear the font */
     editfont = fnt_create (f, l);
@@ -439,20 +441,15 @@ void newfont (void)
 	    bitmaps[c] = NULL;
 	}
 	if (c >= editfont->first && c <= editfont->last) {
-	    bitmaps[c - editfont->first] = bit_create (4, 8);
-	    bit_ink (bitmaps[c - editfont->first], 0);
-	    bit_box (bitmaps[c - editfont->first], 0, 0, 4, 8);
-	    bit_ink (bitmaps[c - editfont->first], 3);
+	    bitmaps[c] = bit_create (4, 8);
+	    bit_ink (bitmaps[c], 0);
+	    bit_box (bitmaps[c], 0, 0, 4, 8);
+	    bit_ink (bitmaps[c], 3);
 	}
     }
 
     /* update the screen */
     bcursor = editfont->first;
-    showbitmap (bcursor);
-    expandbitmap ();
-    scr_ink (scr, 0);
-    scr_box (scr, 0, 192, 320, 8);
-    scr_ink (scr, 3);
 }
 
 /**
@@ -542,9 +539,10 @@ static void save_font (void)
 		scr_print (scr, 40 + 4 * len, 192, " ");
 	    }
 	} while (key != 13);
-	if (! strchr (filename, '.'))
+	if (*filename && ! strchr (filename, '.'))
 	    strcat (filename, ".fnt");
     }
+    if (! *filename) return;
 
     /* convert bitmaps to font */
     for (c = editfont->first; c <= editfont->last; ++c)
@@ -570,6 +568,67 @@ static void fill (void)
     expandbitmap ();
 }
 
+/**
+ * Extend the font.
+ */
+static void extendfont (void)
+{
+    int f, /* edited first character code */
+	l, /* edited last character code */
+	c; /* character count */
+
+    /* get the font character range */
+    f = editfont->first;
+    l = editfont->last;
+    getfontrange (&f, &l, 0, f, l, 255);
+
+    /* extend the font */
+    if (f < editfont->first || l > editfont->last) {
+	for (c = f; c <= l; ++c)
+	    if (c < editfont->first || c > editfont->last) {
+		if (bitmaps[c])
+		    bit_destroy (bitmaps[c]);
+		bitmaps[c] = bit_create (4, 8);
+		bit_ink (bitmaps[c], 0);
+		bit_box (bitmaps[c], 0, 0, 4, 8);
+		bit_ink (bitmaps[c], 3);
+	    }
+	editfont->first = f;
+	editfont->last = l;
+    }
+}
+
+/**
+ * Reduce the font.
+ */
+static void reducefont (void)
+{
+    int f, /* edited first character code */
+	l, /* edited last character code */
+	c; /* character count */
+
+    /* get the font character range */
+    f = editfont->first;
+    l = editfont->last;
+    getfontrange (&f, &l, f, l, f, l);
+
+    /* extend the font */
+    if (f > editfont->first || l < editfont->last) {
+	if (bcursor < f)
+	    bcursor = f;
+	else if (bcursor > l)
+	    bcursor = l;
+	for (c = editfont->first; c <= editfont->last; ++c)
+	    if (c < f || c > l) {
+		if (bitmaps[c])
+		    bit_destroy (bitmaps[c]);
+		showbitmap (c);
+	    }
+	editfont->first = f;
+	editfont->last = l;
+    }
+}
+
 /*----------------------------------------------------------------------
  * Level 1 Routines.
  */
@@ -591,6 +650,7 @@ static int initialise (int argc, char **argv)
 	newfont ();
 
     /* initial screen display */
+    bcursor = editfont->first;
     if (bitmaps[bcursor])
 	expandbitmap ();
     for (b = 0; b <= 255; ++b)
@@ -717,6 +777,14 @@ static int main_program (void)
 	if (background > 15) background = 15;
 	scr_palette (scr, palette, background);
     }
+
+    /* INS - extend character codes */
+    else if (key == -82)
+	extendfont ();
+
+    /* DEL - reduce character codes */
+    else if (key == -83)
+	reducefont ();
 
     /* ESC (quit) */
     else if (key == 27)

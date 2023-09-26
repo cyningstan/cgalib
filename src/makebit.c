@@ -519,9 +519,10 @@ static void savebitmaps (void)
 		scr_print (scr, 40 + 4 * len, 192, " ");
 	    }
 	} while (key != 13);
-	if (! strchr (filename, '.'))
+	if (*filename && ! strchr (filename, '.'))
 	    strcat (filename, ".bit");
     }
+    if (! *filename) return;
 
     /* save the file */
     if (! (fp = fopen (filename, "wb")))
