@@ -28,15 +28,11 @@ TGTFNT = $(TGTDIR)/fnt
 TGTBIT = $(TGTDIR)/bit
 TGTDOC = $(TGTDIR)/doc
 
-LOGDIR = loglib
-LOGLIB = $(LOGDIR)\lib
-LOGINC = $(LOGDIR)\inc
-
 # Tool commands and their options
 CC = wcc
 LIB = wlib
 LD = wcl
-COPTS = -q -0 -W4 -$(MODEL) -I=$(INCDIR) -I=$(LOGINC)
+COPTS = -q -0 -W4 -$(MODEL) -I=$(INCDIR)
 LOPTS = -q
 !ifdef __LINUX__
 CP = cp
@@ -65,7 +61,7 @@ all : &
 # Demonstration and Utilities
 $(TGTDIR)/demo.exe : $(OBJDIR)/demo.o $(TGTDIR)/cgalib.lib
 	*$(LD) $(LOPTS) -fe=$@ $<
-$(TGTDIR)/makefont.exe : $(OBJDIR)/makefont.o $(TGTDIR)/cgalib.lib $(LOGLIB)\loglib.lib
+$(TGTDIR)/makefont.exe : $(OBJDIR)/makefont.o $(TGTDIR)/cgalib.lib
 	*$(LD) $(LOPTS) -fe=$@ $<
 $(TGTDIR)/makebit.exe : $(OBJDIR)/makebit.o $(TGTDIR)/cgalib.lib
 	*$(LD) $(LOPTS) -fe=$@ $<
