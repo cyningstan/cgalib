@@ -223,9 +223,10 @@ static Font *load_font (char *filename, int mkbitmaps)
 		bit_destroy (bitmaps[c]);
 		bitmaps[c] = NULL;
 	    }
-	    if (c >= font->first && c <= font->last)
+	    if (c >= font->first && c <= font->last) {
 		bitmaps[c] = bit_create (4, 8);
-	    fnt_get (font, bitmaps[c], c);
+		fnt_get (font, bitmaps[c], c);
+	    }
 	}
 
     /* return the loaded font */
@@ -591,8 +592,9 @@ static void end_program (void)
 {
     int c; /* counter */
     save_font ();
-    for (c = 0; c < 24; ++c)
-	bit_destroy (bitmaps[c]);
+    for (c = 0; c < 255; ++c)
+	if (bitmaps[c])
+	    bit_destroy (bitmaps[c]);
     for (c = 0; c < 9; ++c)
 	bit_destroy (bits[c]);
     fnt_destroy (editfont);
