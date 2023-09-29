@@ -16,7 +16,6 @@
  */
 
 /** @struct screen holds screen information */
-#ifdef __CGALIB__
 struct screen {
 
     /** @var mode is the video mode */
@@ -37,7 +36,6 @@ struct screen {
     /** @var font is the current font */
     Font *font;
 };
-#endif
 
 /*----------------------------------------------------------------------
  * Public Level Function Prototypes.

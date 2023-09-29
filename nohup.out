@@ -1,0 +1,6 @@
+From https://github.com/cyningstan/cgalib
+   5cf6370..360f434  master     -> origin/master
+Updating 5cf6370..360f434
+Fast-forward
+ makefile | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
